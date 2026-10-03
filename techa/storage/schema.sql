@@ -20,6 +20,7 @@ ON audit_record(case_id, recorded_at);
 
 CREATE TABLE IF NOT EXISTS gbl_case_metadata (
  case_id TEXT PRIMARY KEY,
+ business_metadata_json TEXT NOT NULL,
  contract_version TEXT NOT NULL,
  governance_json TEXT NOT NULL,
  presentation_currency TEXT,
