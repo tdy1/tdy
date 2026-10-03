@@ -1,6 +1,14 @@
 # Changelog
 
 ## 0.1.0
+- Finalized Business Universe → Business Intake → Active Case → Governance Summary lifecycle workspace.
+- Added active-case navigation and canonical Universe-to-Case identity resolution.
+- Added explicit GBL Contract LOADED / NOT LOADED state for intake-created cases.
+- Added governed lifecycle transitions and audited business intake.
+- Added governance-first case summary separating execution readiness from investment clearance.
+- Added persisted audit-digest integrity verification and GBL result reconciliation controls.
+- Final engineering freeze established after green CI and Docker smoke verification.
+
 - Established TECHA engineering repository.
 - Added deterministic financial engine and 20% reserve.
 - Added explicit currency/FX architecture.
