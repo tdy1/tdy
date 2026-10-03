@@ -25,7 +25,8 @@ The canonical TECHA repository contains the production-oriented engine foundatio
 - Exact-date direct and inverse FX presentation
 - Currency-presentation audit capture
 - Browser base/presentation currency controls
-- Business Simulation Workspace: create/load business case, edit assumptions, run base/scenario simulation, and view financial outputs
+- Workspace presentation-result context: displayed FX rate/date/source/direction and same-currency handling
+- Business Simulation Workspace: create/load business case, edit assumptions, run base/scenario simulation, sensitivity, audit review, and view financial outputs
 - Docker and docker-compose deployment
 - CI with GitHub Actions
 - Unit/API/regression tests
@@ -46,6 +47,10 @@ The architecture supports arbitrary three-letter currency codes. The browser exp
 
 ### Verification
 
-The latest verified baseline had 28 passing tests. This workspace commit must pass the full CI suite before being treated as verified.
+The current `master` branch has passed the full GitHub Actions CI suite through **run #97** (`f5990e38def1c85f933ef2c288c347a1a6f4d46e`). The CI test job completed successfully using the repository's `pytest` suite. Runs #94, #95, #96, and #97 are all green.
+
+The latest verified sequence covers workspace creation/loading, scenario execution, evidence status and reclassification, blocking governance, presentation currency, sensitivity execution, audit actions, and the same-currency presentation path.
+
+Formal GitHub release/tag publication remains an administrative step separate from engineering verification.
 
 Previously completed GBL and Business #548 calculations remain external reference requirements until their authoritative fixtures are intentionally imported. They are not recreated here merely to populate the repository.
