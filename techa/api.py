@@ -40,6 +40,10 @@ class UniverseStatusRequest(BaseModel):
     lifecycle_status: BusinessLifecycle
 
 
+class UniverseCaseLinkRequest(BaseModel):
+    case_id: str = Field(min_length=1)
+
+
 class FinancialRequest(BaseModel):
     units_sold: Decimal = Field(ge=0)
     selling_price: Decimal = Field(ge=0)
@@ -126,6 +130,27 @@ def get_universe_item(business_id: str):
     if item is None:
         raise HTTPException(status_code=404, detail="Business universe item not found")
     return jsonable(item)
+
+
+@app.post("/v1/gbl/universe/{business_id}/instantiate")
+def instantiate_universe_case(business_id: str, req: UniverseCaseLinkRequest):
+    item = _store.get_universe_item(business_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Business universe item not found")
+    case = _store.get_business_case(req.case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    if item.active_case_id is not None and item.active_case_id != req.case_id:
+        raise HTTPException(status_code=409, detail="Business already has a different active case")
+    if case.name != item.name:
+        raise HTTPException(status_code=409, detail="Business case name does not match universe item")
+    updated = BusinessUniverseItem(
+        business_id=item.business_id, name=item.name, sector=item.sector,
+        geography=item.geography, lifecycle_status=BusinessLifecycle.INGESTED,
+        active_case_id=req.case_id,
+    )
+    _store.save_universe_item(updated)
+    return jsonable(updated)
 
 
 @app.patch("/v1/gbl/universe/{business_id}/lifecycle")
