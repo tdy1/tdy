@@ -32,8 +32,11 @@ class UniverseItemRequest(BaseModel):
     name: str = Field(min_length=1)
     sector: str = Field(min_length=1)
     geography: str = Field(min_length=1)
-    lifecycle_status: BusinessLifecycle = BusinessLifecycle.UNIVERSE
-    active_case_id: str | None = None
+
+
+class BusinessIntakeRequest(BaseModel):
+    case_id: str = Field(min_length=1)
+    base_currency: str = Field(min_length=3, max_length=3, default="ETB")
 
 
 class UniverseStatusRequest(BaseModel):
@@ -107,10 +110,11 @@ def health() -> dict[str, str]:
 @app.post("/v1/gbl/universe")
 def save_universe_item(req: UniverseItemRequest):
     try:
+        if _store.get_universe_item(req.business_id) is not None:
+            raise HTTPException(status_code=409, detail="Business universe item already exists")
         item = BusinessUniverseItem(
             business_id=req.business_id, name=req.name, sector=req.sector,
-            geography=req.geography, lifecycle_status=req.lifecycle_status,
-            active_case_id=req.active_case_id,
+            geography=req.geography,
         )
         _store.save_universe_item(item)
         return jsonable(item)
@@ -130,6 +134,37 @@ def get_universe_item(business_id: str):
     if item is None:
         raise HTTPException(status_code=404, detail="Business universe item not found")
     return jsonable(item)
+
+
+@app.post("/v1/gbl/universe/{business_id}/intake")
+def intake_business_case(business_id: str, req: BusinessIntakeRequest):
+    item = _store.get_universe_item(business_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Business universe item not found")
+    if item.lifecycle_status is not BusinessLifecycle.UNIVERSE:
+        raise HTTPException(status_code=409, detail="Business must be in UNIVERSE state before intake")
+    if item.active_case_id is not None:
+        raise HTTPException(status_code=409, detail="Business already has an active case")
+    if _store.get_business_case(req.case_id) is not None:
+        raise HTTPException(status_code=409, detail="Business case already exists")
+    candidate = BusinessLifecycleService.transition(item, BusinessLifecycle.CANDIDATE)
+    ingested = BusinessLifecycleService.transition(candidate, BusinessLifecycle.INGESTED)
+    case = BusinessCase(req.case_id, item.name, Currency(req.base_currency, req.base_currency), {})
+    _store.save_business_case(case)
+    linked = BusinessUniverseItem(
+        business_id=ingested.business_id, name=ingested.name, sector=ingested.sector,
+        geography=ingested.geography, lifecycle_status=ingested.lifecycle_status,
+        active_case_id=req.case_id,
+    )
+    _store.save_universe_item(linked)
+    _store.save_audit_record(AuditRecord.create(
+        event="gbl.business.intake", case_id=req.case_id, engine_version="0.1.0",
+        inputs={"business_id": business_id, "from": item.lifecycle_status.value,
+                "through": [candidate.lifecycle_status.value, ingested.lifecycle_status.value],
+                "base_currency": req.base_currency.upper()},
+        outputs={"case_id": req.case_id, "lifecycle_status": ingested.lifecycle_status.value},
+    ))
+    return {"business": jsonable(linked), "case": jsonable(case)}
 
 
 @app.post("/v1/gbl/universe/{business_id}/instantiate")
