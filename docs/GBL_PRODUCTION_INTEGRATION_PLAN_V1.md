@@ -36,7 +36,7 @@ Contract intake validates identity, evidence classes, governance, scenarios, cur
 Neither intake path promotes evidence, silently changes governance, recalculates authoritative source results, infers missing FX, or replaces source-result identity.
 
 ### C. Governance Workspace
-Governance is visible before simulation: State, Human Gate, frozen-through step, blockers, evidence counts, executable status, and source-result status.
+Governance is visible before simulation: State, Human Gate, frozen-through step, blockers, evidence counts, executable status, source-result status, and case-level identity/currency summary. The workspace distinguishes execution readiness from investment clearance.
 
 ### D. Scenario Workspace
 GBL scenarios become first-class executable configurations. Initial model: S1, S2, S3, explicit overrides, scenario-level execution audit. The generic engine remains unaware of #548-specific meanings.
@@ -58,7 +58,7 @@ Material state-changing operations receive audit records. Minimum events: gbl.ca
 
 The current five-step TECHA workspace becomes the execution surface inside a broader GBL shell:
 
-1. **GBL Home** — Business Universe, Recent Cases, Governance status.
+1. **GBL Home** — Business Universe, case intake, governance-first case summary, and recent-case navigation.
 2. **Business Case** — Identity, Governance, Scenarios, Source Results.
 3. **Evidence & Assumptions** — Assumptions, evidence classes, blocking items, verification requirements.
 4. **Simulation** — Scenario, financial inputs, calculation currency, presentation currency, FX date.
