@@ -438,6 +438,7 @@ def import_gbl_case_endpoint(req: GBLCaseImportRequest):
         )
         _store.save_audit_record(audit)
         return jsonable({
+            "case_id": imported.business_case.case_id,
             "business_case": imported.business_case,
             "governance": imported.governance,
             "presentation_currency": imported.presentation_currency,
