@@ -574,5 +574,8 @@ def test_workspace_case_summary_surfaces_universe_identity():
         "lifecycle",
         "active case",
         "not linked",
+        "GBL Contract:",
+        "LOADED",
+        "NOT LOADED",
     ):
         assert marker in html
