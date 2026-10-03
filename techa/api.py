@@ -381,3 +381,52 @@ def simulate_business_case(case_id: str, req: SimulationRequest):
         return jsonable(response)
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from techa.integration.gbl import GBLCaseValidationError, import_gbl_case
+
+
+class GBLCaseImportRequest(BaseModel):
+    contract_version: str
+    business: dict
+    governance: dict
+    currency: dict
+    assumptions: list[dict]
+    scenarios: list[dict]
+    source_results: list[dict]
+
+
+@app.post("/v1/gbl/import")
+def import_gbl_case_endpoint(req: GBLCaseImportRequest):
+    try:
+        imported = import_gbl_case(req.model_dump())
+        _store.save_business_case(imported.business_case)
+        audit = AuditRecord.create(
+            event="gbl.case_imported",
+            case_id=imported.business_case.case_id,
+            engine_version="0.1.0",
+            inputs={
+                "contract_version": req.contract_version,
+                "governance": imported.governance,
+                "presentation_currency": imported.presentation_currency,
+                "source_result_ids": [r.result_id for r in imported.source_results],
+            },
+            outputs={
+                "business_id": imported.business_case.case_id,
+                "assumption_count": len(imported.business_case.assumptions),
+                "scenario_count": len(imported.scenarios),
+            },
+        )
+        _store.save_audit_record(audit)
+        return jsonable({
+            "business_case": imported.business_case,
+            "governance": imported.governance,
+            "presentation_currency": imported.presentation_currency,
+            "fx_as_of": imported.fx_as_of,
+            "fx_source": imported.fx_source,
+            "scenarios": imported.scenarios,
+            "source_results": imported.source_results,
+            "audit_digest": audit.digest(),
+        })
+    except GBLCaseValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
