@@ -631,9 +631,20 @@ def get_gbl_case_summary(case_id: str):
     scenarios = list(metadata["scenarios"])
     source_results = list(metadata["source_results"])
     governance = dict(metadata["governance"])
+    universe_item = _store.get_universe_item_by_case_id(case_id)
     return jsonable({
         "case_id": case_id,
         "business": dict(metadata["business_metadata"]),
+        "universe": (
+            {
+                "business_id": universe_item.business_id,
+                "name": universe_item.name,
+                "sector": universe_item.sector,
+                "geography": universe_item.geography,
+                "lifecycle_status": universe_item.lifecycle_status.value,
+                "active_case_id": universe_item.active_case_id,
+            } if universe_item else None
+        ),
         "governance": governance,
         "currency": {
             "base_currency": case.base_currency.code,
