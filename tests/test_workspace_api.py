@@ -500,3 +500,16 @@ def test_gbl_548_production_acceptance_full_execution_round_trip():
     assert contract["source_results"] == data["source_results"]
     assert contract["source_results"][0]["result_id"] == "548-S2-FINAL"
     assert exported.json()["audit_digest"]
+
+
+def test_business_universe_workspace_controls_are_present():
+    html = Path("techa/web/index.html").read_text(encoding="utf-8")
+    for marker in (
+        'id="universe"',
+        'id="universe_business_id"',
+        'id="universe_save"',
+        '/v1/gbl/universe',
+        "Canonical business registry",
+        "not an investment clearance",
+    ):
+        assert marker in html
