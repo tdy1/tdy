@@ -22,10 +22,6 @@ The web/API layer will consume the domain and engine layers. It must not duplica
 
 Unit, integration, financial regression, reconciliation, and configuration tests belong here. Existing validated financial results must be encoded as regression fixtures when their authoritative source is available.
 
-## Currency architecture
-
-A business case has one calculation base currency. Users may choose presentation currency independently. FX rates are explicit data with an as-of date and source. The system must never silently replace an assumption currency or apply an undocumented exchange rate.
-
 ## Evidence architecture
 
 Inputs retain their evidence class. The engine does not promote an assumption to a verified fact. Evidence status is metadata governing interpretation, not a numerical adjustment.
