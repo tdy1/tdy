@@ -1,28 +1,97 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>TECHA Engine</title></head>
-<body><main><h1>TECHA</h1><p>SIMULATE BEFORE YOU CAPITALIZE.</p>
-<form id="f">
-<label>Units <input name="units_sold" value="100"></label>
-<label>Price <input name="selling_price" value="50"></label>
-<label>Direct COGS <input name="direct_cogs" value="3000"></label>
-<label>Reserve rate <input name="reserve_rate" value="0.20"></label>
-<label>Operating expenses <input name="operating_expenses" value="1000"></label>
-<label>Tax rate <input name="tax_rate" value="0.30"></label>
-<label>Base currency
-<select name="base_currency"><option>ETB</option><option>USD</option><option>EUR</option><option>KES</option><option>TZS</option><option>UGX</option></select>
-</label>
-<label>Presentation currency
-<select name="presentation_currency"><option>ETB</option><option selected>USD</option><option>EUR</option><option>KES</option><option>TZS</option><option>UGX</option></select>
-</label>
-<label>FX as-of <input name="fx_as_of" type="date" value="2026-10-03"></label>
-<button>Calculate</button></form><pre id="out"></pre>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TECHA — Business Simulation Workspace</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#17202a;background:#f5f7f9}
+body{margin:0}.shell{max-width:1180px;margin:auto;padding:28px}
+header{background:#17202a;color:#fff;padding:28px;border-radius:14px;margin-bottom:20px}
+header h1{margin:0 0 4px;font-size:30px} header p{margin:0;opacity:.8}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:#fff;border:1px solid #dfe5ea;border-radius:14px;padding:20px;box-shadow:0 2px 8px #00000008}
+h2{font-size:19px;margin-top:0}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600}
+input,select{padding:10px;border:1px solid #cbd5df;border-radius:8px;font:inherit;background:#fff}
+button{border:0;border-radius:8px;padding:11px 16px;font-weight:700;cursor:pointer;background:#17202a;color:#fff;margin-top:14px}
+button.secondary{background:#e9eef3;color:#17202a}
+.status{padding:10px;border-radius:8px;background:#eef5ff;margin:12px 0;font-size:13px}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf2f7;font-size:11px;margin:2px}
+pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;padding:14px;border-radius:10px;max-height:420px;overflow:auto}
+.results{grid-column:1/-1}.metric{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric div{border:1px solid #dfe5ea;border-radius:10px;padding:12px}.metric strong{display:block;font-size:18px;margin-top:4px}
+@media(max-width:800px){.grid,.fields{grid-template-columns:1fr}.metric{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="shell">
+<header><h1>TECHA</h1><p>SIMULATE BEFORE YOU CAPITALIZE.</p><p>Business Simulation Workspace · Engine 0.1.0</p></header>
+<div class="grid">
+<section class="card">
+<h2>1. Business Case</h2>
+<div class="fields">
+<label>Case ID<input id="case_id" value="CASE-001"></label>
+<label>Business name<input id="name" value="Example Business"></label>
+<label>Base currency<select id="currency"><option>ETB</option><option>USD</option><option>EUR</option><option>KES</option><option>TZS</option><option>UGX</option></select></label>
+<label>Scenario name<input id="scenario_name" value="Base Case"></label>
+</div>
+<div class="status">Inputs created here are stored as explicit model assumptions. They are not promoted to verified facts.</div>
+</section>
+<section class="card">
+<h2>2. Financial Assumptions</h2>
+<div class="fields">
+<label>Units sold<input id="units_sold" type="number" step="any" value="100"></label>
+<label>Selling price<input id="selling_price" type="number" step="any" value="50"></label>
+<label>Direct COGS<input id="direct_cogs" type="number" step="any" value="3000"></label>
+<label>Reserve rate<input id="reserve_rate" type="number" step="0.01" value="0.20"></label>
+<label>Operating expenses<input id="operating_expenses" type="number" step="any" value="1000"></label>
+<label>Tax rate<input id="tax_rate" type="number" step="0.01" value="0.30"></label>
+</div>
+<button id="create">Create / Save Business Case</button>
+</section>
+<section class="card">
+<h2>3. Run Simulation</h2><p>Run stored assumptions through the deterministic financial engine. Scenario overrides are optional.</p>
+<div class="fields">
+<label>Override selling price<input id="override_price" type="number" step="any" placeholder="optional"></label>
+<label>Override units sold<input id="override_units" type="number" step="any" placeholder="optional"></label>
+</div>
+<button id="simulate">Run Base / Scenario Simulation</button>
+<button id="load" class="secondary">Reload Case</button>
+<div id="status" class="status">Ready.</div>
+</section>
+<section class="card">
+<h2>4. Evidence & Governance</h2>
+<p><span class="badge">MARKET_ASSUMPTION</span><span class="badge">EDITABLE</span><span class="badge">AUDITABLE</span></p>
+<p>The current workspace records financial inputs as editable assumptions. Evidence workflows can expand this without changing the financial engine.</p>
+</section>
+<section class="card results">
+<h2>5. Simulation Result</h2><div id="metrics" class="metric"></div><pre id="out">No simulation run yet.</pre>
+</section>
+</div></div>
 <script>
-f.onsubmit=async e=>{
-  e.preventDefault();
-  const o=Object.fromEntries(new FormData(f));
-  const r=await fetch('/v1/financial/calculate',{
-    method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(o)
-  });
-  out.textContent=JSON.stringify(await r.json(),null,2);
-}
-</script></main></body></html>
+const $=id=>document.getElementById(id);
+const n=id=>Number($(id).value);
+const status=m=>{$('status').textContent=m};
+function assumptions(){return [
+['units_sold',n('units_sold'),'units'],['selling_price',n('selling_price'),'base_currency/unit'],
+['direct_cogs',n('direct_cogs'),'base_currency'],['reserve_rate',n('reserve_rate'),'ratio'],
+['operating_expenses',n('operating_expenses'),'base_currency'],['tax_rate',n('tax_rate'),'ratio']
+].map(([key,value,unit])=>({key,value,unit,evidence_class:'MARKET_ASSUMPTION',editable:true}));}
+async function call(url,opts={}){const r=await fetch(url,{headers:{'content-type':'application/json'},...opts});
+const body=await r.json();if(!r.ok)throw new Error(typeof body.detail==='string'?body.detail:JSON.stringify(body.detail));return body;}
+$('create').onclick=async()=>{try{const body=await call('/v1/business-cases',{method:'POST',body:JSON.stringify({
+case_id:$('case_id').value.trim(),name:$('name').value.trim(),base_currency:$('currency').value,assumptions:assumptions()})});
+status('Business case saved: '+body.case_id);$('out').textContent=JSON.stringify(body,null,2);}catch(e){status('Error: '+e.message);}};
+$('load').onclick=async()=>{try{const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim()));
+$('name').value=body.name;$('currency').value=body.base_currency.code;
+for(const [k,a] of Object.entries(body.assumptions||{}))if($(k))$(k).value=a.value;
+status('Business case loaded: '+body.case_id);$('out').textContent=JSON.stringify(body,null,2);}catch(e){status('Error: '+e.message);}};
+$('simulate').onclick=async()=>{try{const overrides={};
+if($('override_price').value!=='')overrides.selling_price=n('override_price');
+if($('override_units').value!=='')overrides.units_sold=n('override_units');
+const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/simulate',{method:'POST',
+body:JSON.stringify({scenario_id:Object.keys(overrides).length?'SCENARIO':'BASE',scenario_name:$('scenario_name').value,overrides})});
+const f=body.financial;
+$('metrics').innerHTML=['Revenue','Total COGS + Reserve','Operating Profit','Tax','Net Profit'].map((label,i)=>{
+const key=['revenue','total_cogs_and_reserve','operating_profit','tax','net_profit'][i];
+return '<div>'+label+'<strong>'+f[key]+'</strong></div>';}).join('');
+$('out').textContent=JSON.stringify(body,null,2);status('Simulation completed and audit record persisted.');
+}catch(e){status('Error: '+e.message);}};
+</script></body></html>
