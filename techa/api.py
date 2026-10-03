@@ -188,6 +188,36 @@ def get_business_case(case_id: str):
     return jsonable(case)
 
 
+@app.get("/v1/business-cases/{case_id}/evidence")
+def get_business_case_evidence(case_id: str):
+    case = _store.get_business_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    items = []
+    for assumption in case.assumptions.values():
+        blocking = assumption.evidence_class in {
+            EvidenceClass.REQUIRES_PRIMARY_VERIFICATION,
+            EvidenceClass.FIELD_VALIDATION_REQUIREMENTS,
+        }
+        items.append({
+            "key": assumption.key,
+            "claim": f"{assumption.key} = {assumption.value} {assumption.unit}",
+            "value": assumption.value,
+            "unit": assumption.unit,
+            "evidence_class": assumption.evidence_class,
+            "source": assumption.source,
+            "editable": assumption.editable,
+            "requires_primary_verification": blocking,
+            "executable": not blocking,
+        })
+    return {
+        "case_id": case_id,
+        "items": items,
+        "blocking_items": [item["key"] for item in items if not item["executable"]],
+        "can_execute": not any(not item["executable"] for item in items),
+    }
+
+
 @app.get("/v1/business-cases/{case_id}/audit")
 def get_business_case_audit(case_id: str, limit: int = 100):
     if _store.get_business_case(case_id) is None:
