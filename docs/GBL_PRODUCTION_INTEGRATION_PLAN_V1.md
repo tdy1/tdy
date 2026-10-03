@@ -50,7 +50,7 @@ Business Case → Governance check → Evidence gate → Scenario selection → 
 Results distinguish TECHA-calculated simulation results, imported GBL source results, analytical interpretation, and unresolved verification requirements. These must not be visually conflated.
 
 ### H. Audit / Integrity
-Material state-changing operations receive audit records. Minimum events: gbl.case_imported, gbl.case_exported, simulation.executed, sensitivity.executed, evidence.reclassified, currency.presented.
+Material state-changing operations receive audit records. Minimum events: gbl.case_imported, gbl.case_exported, simulation.execute, sensitivity.executed, evidence.reclassified, currency.presented.
 
 ## Production UI information architecture
 
