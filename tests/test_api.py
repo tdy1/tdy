@@ -39,12 +39,12 @@ def test_financial_endpoint_with_presentation_currency():
 def test_financial_endpoint_supports_inverse_stored_fx():
     client.post("/v1/fx-rates", json={
         "from_currency": "USD", "to_currency": "ETB", "rate": "160",
-        "as_of": "2026-10-03", "source": "inverse-test"
+        "as_of": "2026-10-04", "source": "inverse-test"
     })
     r = client.post("/v1/financial/calculate", json={
         "units_sold": "100", "selling_price": "50", "direct_cogs": "3000",
         "reserve_rate": "0.2", "operating_expenses": "1000", "tax_rate": "0.3",
-        "base_currency": "ETB", "presentation_currency": "USD", "fx_as_of": "2026-10-03"
+        "base_currency": "ETB", "presentation_currency": "USD", "fx_as_of": "2026-10-04"
     })
     assert r.status_code == 200
     body = r.json()
