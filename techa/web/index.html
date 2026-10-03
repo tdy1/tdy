@@ -14,7 +14,10 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 <body><div class="shell">
 <header><div><h1>TECHA</h1><p>SIMULATE BEFORE YOU CAPITALIZE.</p><p>Business Simulation Workspace</p></div><span class="version">Engine 0.1.0 · GBL-ready</span></header>
 <div class="layout"><nav class="nav"><strong>GBL Workspace</strong><a href="#universe">0 · Business Universe</a><a href="#home">Home</a><a href="#business">1 · Business Case</a><a href="#governance">2 · Governance & Evidence</a><a href="#scenarios">3 · Scenarios</a><a href="#simulation">4 · Simulation</a><a href="#results">5 · Results</a><a href="#audit_section">6 · Audit / Integrity</a><div class="hint">Production flow:<br>Load case → Review governance → Review evidence → Select scenario → Simulate → Reconcile → Audit / Export</div></nav><main class="content">
-<section class="card" id="universe"><h2>0. GBL Business Universe</h2><p class="sub">Canonical business registry. A universe item is not an investment clearance or feasibility conclusion.</p><div class="fields"><label>Business ID<input id="universe_business_id" value="548"></label><label>Business name<input id="universe_name" value="Dehydrated Vegetable Production"></label><label>Sector<input id="universe_sector" value="Agriculture & Agribusiness"></label><label>Geography<input id="universe_geography" value="Ethiopia"></label></div><button id="universe_save">Save Universe Business</button><button id="universe_load" class="secondary">Load Universe</button><div id="universe_out" class="status">Universe registry not loaded.</div></section><section class="card" id="home"><h2>GBL Home</h2><p class="sub">Global Business Lab execution workspace. TECHA executes the model; governance, evidence classes, assumptions, scenarios, and source results remain explicit.</p><div id="home_status" class="status">No GBL case loaded.</div></section><section class="card" id="business">
+<section class="card" id="universe"><h2>0. GBL Business Universe</h2><p class="sub">Canonical business registry. A universe item is not an investment clearance or feasibility conclusion.</p><div class="fields"><label>Business ID<input id="universe_business_id" value="548"></label><label>Business name<input id="universe_name" value="Dehydrated Vegetable Production"></label><label>Sector<input id="universe_sector" value="Agriculture & Agribusiness"></label><label>Geography<input id="universe_geography" value="Ethiopia"></label></div><button id="universe_save">Save Universe Business</button><button id="universe_load" class="secondary">Load Universe</button><div id="universe_out" class="status">Universe registry not loaded.</div>
+<div class="fields" style="margin-top:12px"><label>Lifecycle status<select id="universe_lifecycle">
+<option>UNIVERSE</option><option>CANDIDATE</option><option>INGESTED</option><option>GOVERNANCE_HOLD</option><option>SIMULATION_READY</option><option>SIMULATED</option><option>REVIEW</option><option>CLEARED</option><option>NOT_CLEARED</option>
+</select></label></div><button id="universe_transition" class="secondary">Apply Lifecycle Transition</button><div id="universe_lifecycle_out" class="status">Lifecycle transition not executed.</div></section><section class="card" id="home"><h2>GBL Home</h2><p class="sub">Global Business Lab execution workspace. TECHA executes the model; governance, evidence classes, assumptions, scenarios, and source results remain explicit.</p><div id="home_status" class="status">No GBL case loaded.</div></section><section class="card" id="business">
 <h2>1. Business Case</h2>
 <div class="fields">
 <label>Case ID<input id="case_id" value="CASE-001"></label>
@@ -60,7 +63,14 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 const $=id=>document.getElementById(id);const universeItem=()=>({business_id:$('universe_business_id').value.trim(),name:$('universe_name').value.trim(),sector:$('universe_sector').value.trim(),geography:$('universe_geography').value.trim()});
 async function saveUniverse(){try{const x=await call('/v1/gbl/universe',{method:'POST',body:JSON.stringify(universeItem())});$('universe_out').innerHTML='<strong>Saved:</strong> '+x.business_id+' · '+x.lifecycle_status;status('Business universe item saved.');}catch(e){$('universe_out').textContent='Universe error: '+e.message;}}
 async function loadUniverse(){try{const x=await call('/v1/gbl/universe');$('universe_out').innerHTML='<strong>'+x.count+' universe item(s)</strong><pre>'+JSON.stringify(x.items,null,2)+'</pre>';}catch(e){$('universe_out').textContent='Universe error: '+e.message;}}
-$('universe_save').onclick=saveUniverse;$('universe_load').onclick=loadUniverse;
+async function transitionUniverse(){try{
+ const id=encodeURIComponent($('universe_business_id').value.trim());
+ const x=await call('/v1/gbl/universe/'+id+'/lifecycle',{method:'PATCH',body:JSON.stringify({lifecycle_status:$('universe_lifecycle').value})});
+ $('universe_lifecycle_out').innerHTML='<strong>Lifecycle:</strong> '+x.lifecycle_status+' · active case: '+(x.active_case_id||'none');
+ $('universe_out').innerHTML='<strong>Business:</strong> '+x.business_id+' · '+x.name+' · '+x.lifecycle_status;
+ status('Lifecycle transition recorded and audited.');
+}catch(e){$('universe_lifecycle_out').textContent='Lifecycle error: '+e.message;}}
+$('universe_save').onclick=saveUniverse;$('universe_load').onclick=loadUniverse;$('universe_transition').onclick=transitionUniverse;
 
 const n=id=>Number($(id).value);
 const status=m=>{$('status').textContent=m};
