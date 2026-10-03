@@ -231,3 +231,18 @@ def test_gbl_active_case_navigation_lists_linked_cases():
     match = next(x for x in response.json()["cases"] if x["business_id"] == "548-NAV")
     assert match["case_id"] == "548-NAV"
     assert match["lifecycle_status"] == "INGESTED"
+
+
+def test_gbl_case_summary_includes_linked_universe_identity():
+    client = TestClient(app)
+    business = {"business_id": "548-IDENTITY", "name": "Identity Test", "sector": "Agriculture", "geography": "Ethiopia"}
+    created = client.post("/v1/gbl/universe", json=business)
+    assert created.status_code == 200
+    intake = client.post("/v1/gbl/universe/548-IDENTITY/intake", json={"case_id": "548-IDENTITY", "base_currency": "ETB"})
+    assert intake.status_code == 200
+    summary = client.get("/v1/gbl/cases/548-IDENTITY/summary")
+    assert summary.status_code == 200
+    universe = summary.json()["universe"]
+    assert universe["business_id"] == "548-IDENTITY"
+    assert universe["active_case_id"] == "548-IDENTITY"
+    assert universe["lifecycle_status"] == "INGESTED"
