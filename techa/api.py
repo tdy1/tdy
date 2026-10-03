@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from techa.core.models import Assumption, BusinessCase, Currency, EvidenceClass, FxRate
-from techa.core.universe import BusinessLifecycle, BusinessUniverseItem, validate_lifecycle_transition
+from techa.core.universe import BusinessLifecycle, BusinessLifecycleService, BusinessUniverseItem
 from techa.core.evidence import EvidenceItem, EvidenceRegistry
 from techa.core.scenario import Scenario
 from techa.core.serialization import jsonable
@@ -159,14 +159,9 @@ def update_universe_lifecycle(business_id: str, req: UniverseStatusRequest):
     if item is None:
         raise HTTPException(status_code=404, detail="Business universe item not found")
     try:
-        validate_lifecycle_transition(item.lifecycle_status, req.lifecycle_status)
+        updated = BusinessLifecycleService.transition(item, req.lifecycle_status)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    updated = BusinessUniverseItem(
-        business_id=item.business_id, name=item.name, sector=item.sector,
-        geography=item.geography, lifecycle_status=req.lifecycle_status,
-        active_case_id=item.active_case_id,
-    )
     _store.save_universe_item(updated)
     _store.save_audit_record(AuditRecord.create(
         event="gbl.lifecycle.transition",
