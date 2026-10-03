@@ -97,7 +97,7 @@ def test_gbl_business_universe_lifecycle_api():
 
 def test_gbl_universe_instantiates_existing_case():
     universe = client.post("/v1/gbl/universe", json={
-        "business_id": "548",
+        "business_id": "550",
         "name": "Dehydrated Vegetable Production",
         "sector": "Agriculture & Agribusiness",
         "geography": "Ethiopia",
@@ -111,7 +111,7 @@ def test_gbl_universe_instantiates_existing_case():
     })
     assert case.status_code == 200
 
-    linked = client.post("/v1/gbl/universe/548/instantiate", json={
+    linked = client.post("/v1/gbl/universe/550/instantiate", json={
         "case_id": "548-case-v1",
     })
     assert linked.status_code == 200
