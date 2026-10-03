@@ -71,19 +71,19 @@ class SQLiteStore:
                 assumptions=assumptions,
             )
 
-    def save_gbl_case_metadata(self, case_id: str, contract_version: str, governance: dict,
+    def save_gbl_case_metadata(self, case_id: str, contract_version: str, business_metadata: dict, governance: dict,
                                presentation_currency: str | None, fx_as_of: str | None,
                                fx_source: str | None, scenarios: list, source_results: list) -> None:
         with self._lock:
             self.db.execute(
                 """INSERT INTO gbl_case_metadata
-                   (case_id,contract_version,governance_json,presentation_currency,fx_as_of,fx_source,scenarios_json,source_results_json)
-                   VALUES(?,?,?,?,?,?,?,?)
+                   (case_id,business_metadata_json,contract_version,governance_json,presentation_currency,fx_as_of,fx_source,scenarios_json,source_results_json)
+                   VALUES(?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(case_id) DO UPDATE SET contract_version=excluded.contract_version,
                    governance_json=excluded.governance_json,presentation_currency=excluded.presentation_currency,
                    fx_as_of=excluded.fx_as_of,fx_source=excluded.fx_source,scenarios_json=excluded.scenarios_json,
                    source_results_json=excluded.source_results_json""",
-                (case_id, contract_version, json.dumps(governance, sort_keys=True, default=str),
+                (case_id, contract_version, json.dumps(business_metadata, sort_keys=True, default=str), json.dumps(governance, sort_keys=True, default=str),
                  presentation_currency, fx_as_of, fx_source,
                  json.dumps(scenarios, sort_keys=True, default=str),
                  json.dumps(source_results, sort_keys=True, default=lambda o: o.__dict__)),
@@ -93,15 +93,15 @@ class SQLiteStore:
     def get_gbl_case_metadata(self, case_id: str) -> dict | None:
         with self._lock:
             row = self.db.execute(
-                "SELECT contract_version,governance_json,presentation_currency,fx_as_of,fx_source,scenarios_json,source_results_json "
+                "SELECT business_metadata_json,contract_version,governance_json,presentation_currency,fx_as_of,fx_source,scenarios_json,source_results_json "
                 "FROM gbl_case_metadata WHERE case_id=?", (case_id,)
             ).fetchone()
         if row is None:
             return None
         return {
-            "contract_version": row[0], "governance": json.loads(row[1]),
-            "presentation_currency": row[2], "fx_as_of": row[3], "fx_source": row[4],
-            "scenarios": json.loads(row[5]), "source_results": json.loads(row[6]),
+            "business_metadata": json.loads(row[0]), "contract_version": row[1], "governance": json.loads(row[2]),
+            "presentation_currency": row[3], "fx_as_of": row[4], "fx_source": row[5],
+            "scenarios": json.loads(row[6]), "source_results": json.loads(row[7]),
         }
 
     def save_fx_rate(self, fx: FxRate) -> None:
