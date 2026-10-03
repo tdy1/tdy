@@ -7,11 +7,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from techa.core.models import Assumption, BusinessCase, Currency, EvidenceClass
+from techa.core.models import Assumption, BusinessCase, Currency, EvidenceClass, FxRate
 from techa.core.scenario import Scenario
 from techa.core.serialization import jsonable
 from techa.core.simulation import SimulationService
 from techa.core.sensitivity_service import SensitivityService
+from techa.audit.record import AuditRecord
+from techa.financial.currency import CurrencyConverter
 from techa.financial.engine import FinancialEngine, FinancialInputs
 from techa.storage.repository import SQLiteStore
 
@@ -29,6 +31,16 @@ class FinancialRequest(BaseModel):
     reserve_rate: Decimal = Field(ge=0, le=1)
     operating_expenses: Decimal = Field(ge=0)
     tax_rate: Decimal = Field(default=Decimal("0"), ge=0, le=1)
+    base_currency: str = Field(default="ETB", min_length=3, max_length=3)
+    presentation_currency: str | None = Field(default=None, min_length=3, max_length=3)
+    fx_as_of: str | None = Field(default=None, min_length=1)
+
+class FxRateRequest(BaseModel):
+    from_currency: str = Field(min_length=3, max_length=3)
+    to_currency: str = Field(min_length=3, max_length=3)
+    rate: Decimal = Field(gt=0)
+    as_of: str = Field(min_length=1)
+    source: str = Field(min_length=1)
 
 
 class AssumptionRequest(BaseModel):
@@ -69,13 +81,59 @@ def health() -> dict[str, str]:
     return {"status": "ok", "engine": "techa"}
 
 
-@app.post("/v1/financial/calculate")
-def calculate(req: FinancialRequest) -> dict[str, str]:
+@app.post("/v1/fx-rates")
+def save_fx_rate(req: FxRateRequest):
     try:
-        result = FinancialEngine.calculate(FinancialInputs(**req.model_dump()))
+        fx = FxRate(req.from_currency, req.to_currency, req.rate, req.as_of, req.source)
+        _store.save_fx_rate(fx)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return {k: str(v) for k, v in result.__dict__.items()}
+    return jsonable(fx)
+
+
+@app.get("/v1/fx-rates/{from_currency}/{to_currency}")
+def get_fx_rate(from_currency: str, to_currency: str, as_of: str):
+    fx = _store.get_fx_rate(from_currency, to_currency, as_of)
+    if fx is None:
+        raise HTTPException(status_code=404, detail="FX rate not found for exact currency pair and as-of date")
+    return jsonable(fx)
+
+
+@app.post("/v1/financial/calculate")
+def calculate(req: FinancialRequest):
+    try:
+        result = FinancialEngine.calculate(FinancialInputs(
+            units_sold=req.units_sold,
+            selling_price=req.selling_price,
+            direct_cogs=req.direct_cogs,
+            reserve_rate=req.reserve_rate,
+            operating_expenses=req.operating_expenses,
+            tax_rate=req.tax_rate,
+        ))
+        base_currency = req.base_currency.upper()
+        presentation_currency = (req.presentation_currency or base_currency).upper()
+        response = {"financial": result}
+        if presentation_currency != base_currency:
+            if not req.fx_as_of:
+                raise ValueError("fx_as_of is required when presentation currency differs from base currency")
+            fx = _store.get_fx_rate(base_currency, presentation_currency, req.fx_as_of)
+            if fx is None:
+                raise ValueError(f"No stored FX rate for {base_currency}->{presentation_currency} as_of={req.fx_as_of}")
+            converter = CurrencyConverter({(fx.from_currency, fx.to_currency): fx})
+            presented = converter.present_financial_result(result, base_currency, presentation_currency)
+            audit = AuditRecord.create(
+                event="currency.present", case_id="ADHOC", engine_version="0.1.0",
+                inputs={"base_currency": base_currency, "presentation_currency": presentation_currency,
+                        "fx_as_of": fx.as_of, "fx_source": fx.source, "fx_rate": fx.rate},
+                outputs={"financial": result, "presented": presented},
+            )
+            _store.save_audit_record(audit)
+            response.update({"presentation": presented, "fx": fx, "audit_digest": audit.digest()})
+        else:
+            response["presentation"] = result
+        return jsonable(response)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.post("/v1/business-cases")
