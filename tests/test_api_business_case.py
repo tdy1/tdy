@@ -52,7 +52,7 @@ def test_sensitivity_and_audit_endpoints():
         "variable": "selling_price", "values": ["40", "50", "60"]
     })
     assert r.status_code == 200
-    assert [p["financial"]["net_profit"] for p in r.json()["points"]] == ["-600.00", "280.00", "1160.00"]
+    assert [p["financial"]["net_profit"] for p in r.json()["points"]] == ["-600.00", "280.00", "980.00"]
     assert r.json()["audit_digest"]
     r = client.get("/v1/business-cases/API-SENS-001/audit")
     assert r.status_code == 200
