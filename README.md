@@ -22,7 +22,9 @@ The repository contains the TECHA engine foundation and the first Business Simul
 
 Run the application and open / to use the first user-facing workflow:
 
-Business Case → Assumptions → Simulation → Results → Audit
+GBL Home → Business Case → Governance & Evidence → Scenarios → Simulation → Results → Audit / Integrity
+
+For the GBL production workflow: Load GBL contract → review governance/evidence → select scenario → simulate → reconcile TECHA results against preserved GBL source results → inspect audit integrity → export.
 
 The workspace creates and loads business cases through the existing API, records editable assumptions with explicit evidence classification, executes the deterministic simulation engine, and displays the resulting financial outputs. It is an application layer over the engine rather than a second financial calculator.
 
