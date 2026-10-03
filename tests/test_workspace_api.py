@@ -367,3 +367,18 @@ def test_workspace_browser_surface_exposes_gbl_controls():
     ]
     for marker in required_controls:
         assert marker in html
+
+
+def test_gbl_results_reconciliation_preserves_authoritative_source_results(client):
+    payload = _gbl_payload()
+    imported = client.post("/v1/gbl/import", json=payload)
+    assert imported.status_code == 200
+    case_id = imported.json()["case_id"]
+
+    response = client.get(f"/v1/gbl/cases/{case_id}/results-reconciliation")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reconciliation"]["authoritative_results_preserved"] is True
+    assert body["reconciliation"]["not_silently_overwritten"] is True
+    assert body["reconciliation"]["source_result_ids"] == ["548-S2-FINAL"]
+    assert body["gbl_source_results"][0]["status"] == "AUTHORITATIVE_REFERENCE"
