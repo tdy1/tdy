@@ -2,7 +2,7 @@
 
 ## Current state
 
-The canonical TECHA repository contains the first production-oriented engine foundation plus durable multi-currency presentation. Work is being added only for identified implementation gaps; completed analytical work is not recomputed or replaced.
+The canonical TECHA repository contains the production-oriented engine foundation and the first user-facing Business Simulation Workspace. Work is added only for identified implementation gaps; completed analytical work is not recomputed or replaced.
 
 ### Implemented
 
@@ -25,22 +25,27 @@ The canonical TECHA repository contains the first production-oriented engine fou
 - Exact-date direct and inverse FX presentation
 - Currency-presentation audit capture
 - Browser base/presentation currency controls
+- Business Simulation Workspace: create/load business case, edit assumptions, run base/scenario simulation, and view financial outputs
 - Docker and docker-compose deployment
 - CI with GitHub Actions
 - Unit/API/regression tests
 - Security baseline
 - Release procedure and changelog
 
+### Workspace boundary
+
+The Business Simulation Workspace is intentionally an application layer over the existing engine. It does not duplicate financial formulas. Users create a business case, store explicit editable assumptions with an evidence class, and execute the case through the existing deterministic simulation service. Simulation execution produces an audit record.
+
+The current workspace records financial inputs as MARKET_ASSUMPTION by default. This is a deliberate governance-safe starting point; later evidence workflows can promote or reclassify inputs only through explicit controls.
+
 ### Currency design decision
 
-TECHA uses **one calculation base currency per business case, with an independent presentation currency**. This is deliberately different from maintaining parallel financial calculations in ETB, USD, EUR, KES, TZS, UGX, etc.
+TECHA uses one calculation base currency per business case, with an independent presentation currency. The financial engine remains currency-neutral; presentation conversion is a separate, auditable layer.
 
-The financial engine remains currency-neutral: it calculates the business case in its declared base currency. Presentation conversion is a separate, auditable layer. This prevents exchange-rate changes from altering the underlying model and avoids duplicated financial logic.
-
-The architecture supports arbitrary three-letter currency codes. The browser currently exposes the initial operational set ETB, USD, EUR, KES, TZS, and UGX; the engine/API are not limited to that list.
+The architecture supports arbitrary three-letter currency codes. The browser exposes the initial operational set ETB, USD, EUR, KES, TZS, and UGX; the engine/API are not limited to that list.
 
 ### Verification
 
-The latest GitHub Actions run for the corrected presentation-precision regression is green. Release verification must continue to include any subsequent implementation commits.
+The latest verified baseline had 28 passing tests. This workspace commit must pass the full CI suite before being treated as verified.
 
 Previously completed GBL and Business #548 calculations remain external reference requirements until their authoritative fixtures are intentionally imported. They are not recreated here merely to populate the repository.
