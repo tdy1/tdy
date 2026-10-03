@@ -15,3 +15,5 @@ CREATE TABLE IF NOT EXISTS audit_record (
  digest TEXT PRIMARY KEY, event TEXT NOT NULL, case_id TEXT NOT NULL,
  engine_version TEXT NOT NULL, recorded_at TEXT NOT NULL, payload_json TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_audit_case_recorded
+ON audit_record(case_id, recorded_at);
