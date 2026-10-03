@@ -53,14 +53,14 @@ pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;
 <label>Override units sold<input id="override_units" type="number" step="any" placeholder="optional"></label>
 </div>
 <button id="save_fx" class="secondary">Save FX Rate</button><button id="simulate">Run Base / Scenario Simulation</button>
-<button id="load" class="secondary">Reload Case</button>
+<button id="load" class="secondary">Reload Case</button><button id="audit" class="secondary">View Audit Trail</button>
 <div id="status" class="status">Ready.</div>
 </section>
 <section class="card">
 <h2>4. Evidence & Governance</h2>
 <p><span class="badge">CLASSIFIED</span><span class="badge">EDITABLE</span><span class="badge">AUDITABLE</span></p>
-<button id="evidence" class="secondary">Review Evidence Status</button>
-<div id="evidence_out" class="status">Evidence status not loaded.</div><div id="evidence_editor"></div>
+<button id="evidence" class="secondary">Review Evidence Status</button><button id="sensitivity" class="secondary">Run Price Sensitivity</button>
+<div id="evidence_out" class="status">Evidence status not loaded.</div><div id="evidence_editor"></div><div id="audit_out" class="status">Audit trail not loaded.</div>
 </section>
 <section class="card results">
 <h2>5. Simulation Result</h2><div id="metrics" class="metric"></div><pre id="out">No simulation run yet.</pre>
@@ -102,6 +102,8 @@ $('load').onclick=async()=>{try{const body=await call('/v1/business-cases/'+enco
 $('name').value=body.name;$('currency').value=body.base_currency.code;
 for(const [k,a] of Object.entries(body.assumptions||{}))if($(k))$(k).value=a.value;
 status('Business case loaded: '+body.case_id);$('out').textContent=JSON.stringify(body,null,2);}catch(e){status('Error: '+e.message);}};
+$('audit').onclick=async()=>{try{const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/audit');$('audit_out').innerHTML='<strong>'+body.records.length+' audit record(s)</strong><pre>'+JSON.stringify(body.records,null,2)+'</pre>';}catch(e){$('audit_out').textContent='Audit error: '+e.message;}};
+$('sensitivity').onclick=async()=>{try{const values=[40,45,50,55,60];const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/sensitivity',{method:'POST',body:JSON.stringify({variable:'selling_price',values})});$('out').textContent=JSON.stringify(body,null,2);status('Sensitivity completed and audited: '+body.points.length+' points.');}catch(e){status('Sensitivity error: '+e.message);}};
 $('evidence').onclick=async()=>{try{
  const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/evidence');
  renderEvidence(body);
