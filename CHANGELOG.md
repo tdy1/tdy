@@ -14,3 +14,7 @@
 - Added direct and inverse stored-FX presentation paths.
 - Added currency-presentation audit metadata.
 - Added browser base/presentation currency controls.
+- Added Business Simulation Workspace for business-case creation/loading, assumption editing, evidence governance, base/scenario simulation, sensitivity, audit review, and presentation-currency context.
+- Added explicit blocking governance for assumptions requiring primary verification or field validation.
+- Added same-currency presentation handling without unnecessary FX conversion.
+- Verified the workspace through GitHub Actions CI runs #94–#97.
