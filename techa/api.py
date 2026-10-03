@@ -583,6 +583,25 @@ def import_gbl_case_endpoint(req: GBLCaseImportRequest):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@app.get("/v1/gbl/cases")
+def list_gbl_cases():
+    items = _store.list_universe_items()
+    cases = []
+    for item in items:
+        if item.active_case_id:
+            metadata = _store.get_gbl_case_metadata(item.active_case_id)
+            cases.append({
+                "business_id": item.business_id,
+                "name": item.name,
+                "sector": item.sector,
+                "geography": item.geography,
+                "lifecycle_status": item.lifecycle_status.value,
+                "case_id": item.active_case_id,
+                "governance": metadata["governance"] if metadata else {},
+            })
+    return jsonable({"cases": cases})
+
+
 @app.get("/v1/gbl/cases/{case_id}/summary")
 def get_gbl_case_summary(case_id: str):
     case = _store.get_business_case(case_id)
