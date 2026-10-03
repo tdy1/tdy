@@ -558,11 +558,11 @@ def get_gbl_results_reconciliation(case_id: str):
     if metadata is None:
         raise HTTPException(status_code=404, detail="GBL metadata not found")
     audits = _store.get_audit_records(case_id, 100)
-    simulation_events = [r for r in audits if r.get("event") in {"simulation.executed", "gbl.case_imported"}]
+    simulation_events = [r for r in audits if r.get("event") in {"simulation.execute", "gbl.case_imported"}]
     return jsonable({
         "case_id": case_id,
         "techa_calculation": {
-            "available": any(r.get("event") == "simulation.executed" for r in audits),
+            "available": any(r.get("event") == "simulation.execute" for r in audits),
             "audit_events": simulation_events,
         },
         "gbl_source_results": list(metadata["source_results"]),
