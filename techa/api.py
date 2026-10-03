@@ -383,7 +383,7 @@ def simulate_business_case(case_id: str, req: SimulationRequest):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-from techa.integration.gbl import GBLCaseValidationError, import_gbl_case
+from techa.integration.gbl import GBLCase, GBLCaseValidationError, export_gbl_case, import_gbl_case
 
 
 class GBLCaseImportRequest(BaseModel):
@@ -404,6 +404,7 @@ def import_gbl_case_endpoint(req: GBLCaseImportRequest):
         _store.save_gbl_case_metadata(
             imported.business_case.case_id,
             req.contract_version,
+            dict(imported.business_metadata),
             dict(imported.governance),
             imported.presentation_currency,
             imported.fx_as_of,
@@ -450,3 +451,37 @@ def get_gbl_case_metadata(case_id: str):
     if metadata is None:
         raise HTTPException(status_code=404, detail="GBL metadata not found")
     return jsonable({"case_id": case_id, **metadata})
+
+
+@app.get("/v1/gbl/cases/{case_id}/export")
+def export_gbl_case_endpoint(case_id: str):
+    business_case = _store.get_business_case(case_id)
+    if business_case is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    metadata = _store.get_gbl_case_metadata(case_id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="GBL metadata not found")
+    source_results = tuple(
+        __import__("techa.integration.gbl", fromlist=["GBLSourceResult"]).GBLSourceResult(**item)
+        for item in metadata["source_results"]
+    )
+    gbl_case = GBLCase(
+        business_case=business_case,
+        business_metadata=metadata["business_metadata"],
+        governance=metadata["governance"],
+        presentation_currency=metadata["presentation_currency"],
+        fx_as_of=metadata["fx_as_of"],
+        fx_source=metadata["fx_source"],
+        scenarios=tuple(metadata["scenarios"]),
+        source_results=source_results,
+    )
+    payload = export_gbl_case(gbl_case, metadata["contract_version"])
+    audit = AuditRecord.create(
+        event="gbl.case_exported",
+        case_id=case_id,
+        engine_version="0.1.0",
+        inputs={"contract_version": metadata["contract_version"]},
+        outputs={"source_result_ids": [r["result_id"] for r in metadata["source_results"]]},
+    )
+    _store.save_audit_record(audit)
+    return jsonable({"contract": payload, "audit_digest": audit.digest()})
