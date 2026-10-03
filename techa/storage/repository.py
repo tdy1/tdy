@@ -96,6 +96,23 @@ class SQLiteStore:
             )
             self.db.commit()
 
+    def get_audit_records(self, case_id: str, limit: int = 100) -> list[dict[str, str]]:
+        if limit < 1 or limit > 1000:
+            raise ValueError("Audit limit must be between 1 and 1000")
+        with self._lock:
+            rows = self.db.execute(
+                "SELECT digest,event,case_id,engine_version,recorded_at,payload_json "
+                "FROM audit_record WHERE case_id=? ORDER BY recorded_at DESC LIMIT ?",
+                (case_id, limit),
+            ).fetchall()
+        return [
+            {
+                "digest": row[0], "event": row[1], "case_id": row[2],
+                "engine_version": row[3], "recorded_at": row[4], "payload_json": row[5],
+            }
+            for row in rows
+        ]
+
     def close(self) -> None:
         with self._lock:
             self.db.close()
