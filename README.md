@@ -16,23 +16,31 @@ TECHA is the engineering backbone for the Global Business Lab simulation system.
 
 ## Repository status
 
-This repository is being established as the canonical TECHA engineering repository. Existing project decisions and completed work are treated as requirements; this repository does not intentionally repeat previously completed analytical work.
+The repository contains the TECHA engine foundation and the first Business Simulation Workspace. Existing project decisions and completed work are treated as requirements; the repository does not intentionally repeat previously completed analytical work.
 
-## Initial architecture
+## Business Simulation Workspace
 
-- `techa/core/` — domain models and engines
-- `techa/financial/` — financial calculations and currency handling
-- `techa/audit/` — reproducibility and audit records
-- `tests/` — unit and regression tests
-- `docs/` — architecture and governance documentation
-- `.github/workflows/` — continuous integration
+Run the application and open / to use the first user-facing workflow:
+
+Business Case → Assumptions → Simulation → Results → Audit
+
+The workspace creates and loads business cases through the existing API, records editable assumptions with explicit evidence classification, executes the deterministic simulation engine, and displays the resulting financial outputs. It is an application layer over the engine rather than a second financial calculator.
+
+## Architecture
+
+- techa/core/ — domain models, scenarios, execution and evidence
+- techa/financial/ — financial calculations, cash flow, debt and currency handling
+- techa/audit/ — reproducibility and audit records
+- techa/storage/ — SQLite persistence
+- techa/web/ — Business Simulation Workspace
+- tests/ — unit, API and regression tests
+- docs/ — architecture and governance documentation
+- .github/workflows/ — continuous integration
 
 ## Local development
 
 Requires Python 3.11+.
 
-```bash
 python -m pytest
-```
 
-The initial engine is intentionally dependency-light so its numerical behavior remains transparent and portable.
+The engine remains dependency-light so its numerical behavior is transparent and portable.
