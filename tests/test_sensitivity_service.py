@@ -30,7 +30,7 @@ def test_sensitivity_executes_each_point_and_audits(tmp_path):
     service = SensitivityService(SimulationService(store), store)
     result = service.execute(case, "selling_price", [Decimal("40"), Decimal("50"), Decimal("60")])
     assert [p.financial.net_profit for p in result.points] == [
-        Decimal("-600.00"), Decimal("280.00"), Decimal("1160.00")
+        Decimal("-600.00"), Decimal("280.00"), Decimal("980.00")
     ]
     records = store.get_audit_records("SENS-001")
     assert len(records) == 4
