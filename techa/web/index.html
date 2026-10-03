@@ -4,26 +4,16 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TECHA — Business Simulation Workspace</title>
 <style>
-:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#17202a;background:#f5f7f9}
-body{margin:0}.shell{max-width:1180px;margin:auto;padding:28px}
-header{background:#17202a;color:#fff;padding:28px;border-radius:14px;margin-bottom:20px}
-header h1{margin:0 0 4px;font-size:30px} header p{margin:0;opacity:.8}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:#fff;border:1px solid #dfe5ea;border-radius:14px;padding:20px;box-shadow:0 2px 8px #00000008}
-h2{font-size:19px;margin-top:0}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600}
-input,select{padding:10px;border:1px solid #cbd5df;border-radius:8px;font:inherit;background:#fff}
-button{border:0;border-radius:8px;padding:11px 16px;font-weight:700;cursor:pointer;background:#17202a;color:#fff;margin-top:14px}
-button.secondary{background:#e9eef3;color:#17202a}
-.status{padding:10px;border-radius:8px;background:#eef5ff;margin:12px 0;font-size:13px}
-.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf2f7;font-size:11px;margin:2px}
-pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;padding:14px;border-radius:10px;max-height:420px;overflow:auto}
-.results{grid-column:1/-1}.metric{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric div{border:1px solid #dfe5ea;border-radius:10px;padding:12px}.metric strong{display:block;font-size:18px;margin-top:4px}
-@media(max-width:800px){.grid,.fields{grid-template-columns:1fr}.metric{grid-template-columns:1fr}}
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#17202a;background:#f3f6f8;line-height:1.45}
+*{box-sizing:border-box}body{margin:0}.shell{max-width:1280px;margin:auto;padding:24px}
+header{background:#17202a;color:#fff;padding:26px 28px;border-radius:16px;margin-bottom:18px;display:flex;justify-content:space-between;gap:20px;align-items:center}
+header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opacity:.78}.version{font-size:12px;padding:7px 10px;border:1px solid #ffffff33;border-radius:999px;white-space:nowrap}
+.layout{display:grid;grid-template-columns:240px 1fr;gap:18px}.nav,.card{background:#fff;border:1px solid #dfe5ea;border-radius:14px}.nav{padding:14px;height:max-content;position:sticky;top:18px}.nav strong{display:block;padding:8px 10px}.nav a{display:block;text-decoration:none;color:#334155;padding:10px;border-radius:9px;font-size:14px}.nav a:hover{background:#eef3f7}.content{display:grid;gap:16px}.card{padding:20px}.card h2{margin:0 0 5px;font-size:19px}.sub{margin:0 0 16px;color:#667482;font-size:13px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;color:#44515e}input,select{padding:10px 11px;border:1px solid #cbd5df;border-radius:8px;font:inherit;background:#fff;color:#17202a}button{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;background:#17202a;color:#fff;margin:10px 8px 0 0}button.secondary{background:#e9eef3;color:#17202a}button.accent{background:#176b4d}.actions{margin-top:5px}.status{padding:11px 12px;border-radius:9px;background:#eef5ff;margin-top:12px;font-size:13px}.status strong{font-weight:800}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf2f7;font-size:10px;margin:0 4px 4px 0}.metric{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:12px}.metric div{border:1px solid #dfe5ea;border-radius:10px;padding:11px;font-size:12px;color:#667482}.metric strong{display:block;font-size:17px;color:#17202a;margin-top:3px}.section-num{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#17202a;color:#fff;font-size:12px;margin-right:7px}pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;padding:14px;border-radius:10px;max-height:420px;overflow:auto}.results{min-height:220px}.hint{font-size:12px;color:#667482;margin-top:8px}.editor{margin-top:10px}.editor>div{border-top:1px solid #dfe5ea;padding:12px 0}.editor .fields{margin-top:8px}.hidden{display:none}@media(max-width:900px){.layout{grid-template-columns:1fr}.nav{position:static}.metric{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.shell{padding:12px}.fields,.metric{grid-template-columns:1fr}header{display:block}}
 </style>
 </head>
 <body><div class="shell">
-<header><h1>TECHA</h1><p>SIMULATE BEFORE YOU CAPITALIZE.</p><p>Business Simulation Workspace · Engine 0.1.0</p></header>
-<div class="grid">
+<header><div><h1>TECHA</h1><p>SIMULATE BEFORE YOU CAPITALIZE.</p><p>Business Simulation Workspace</p></div><span class="version">Engine 0.1.0 · GBL-ready</span></header>
+<div class="layout"><nav class="nav"><strong>Workspace</strong><a href="#business">1 · Business Case</a><a href="#financial">2 · Financial Inputs</a><a href="#simulation">3 · Run Simulation</a><a href="#governance">4 · Evidence & Governance</a><a href="#results">5 · Results</a><div class="hint">Recommended flow:<br>Save → Review evidence → Load GBL → Run → Audit / Export</div></nav><main class="content">
 <section class="card">
 <h2>1. Business Case</h2>
 <div class="fields">
