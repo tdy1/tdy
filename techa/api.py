@@ -443,6 +443,51 @@ def import_gbl_case_endpoint(req: GBLCaseImportRequest):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@app.get("/v1/gbl/cases/{case_id}/summary")
+def get_gbl_case_summary(case_id: str):
+    case = _store.get_business_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    metadata = _store.get_gbl_case_metadata(case_id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="GBL metadata not found")
+
+    blocking_items = [
+        assumption.key
+        for assumption in case.assumptions.values()
+        if assumption.evidence_class in {
+            EvidenceClass.REQUIRES_PRIMARY_VERIFICATION,
+            EvidenceClass.FIELD_VALIDATION_REQUIREMENTS,
+        }
+    ]
+    scenarios = list(metadata["scenarios"])
+    source_results = list(metadata["source_results"])
+    governance = dict(metadata["governance"])
+    return jsonable({
+        "case_id": case_id,
+        "business": dict(metadata["business_metadata"]),
+        "governance": governance,
+        "currency": {
+            "base_currency": case.base_currency.code,
+            "presentation_currency": metadata["presentation_currency"],
+            "fx_as_of": metadata["fx_as_of"],
+            "fx_source": metadata["fx_source"],
+        },
+        "counts": {
+            "assumptions": len(case.assumptions),
+            "blocking_evidence": len(blocking_items),
+            "scenarios": len(scenarios),
+            "source_results": len(source_results),
+        },
+        "execution_readiness": {
+            "can_execute": not blocking_items,
+            "blocking_assumptions": blocking_items,
+        },
+        "scenarios": scenarios,
+        "source_results": source_results,
+    })
+
+
 @app.get("/v1/gbl/cases/{case_id}")
 def get_gbl_case_metadata(case_id: str):
     if _store.get_business_case(case_id) is None:
