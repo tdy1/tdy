@@ -48,7 +48,7 @@ def test_financial_endpoint_supports_inverse_stored_fx():
     })
     assert r.status_code == 200
     body = r.json()
-    assert body["presentation"]["net_profit"] == "1.7500"
+    assert body["presentation"]["net_profit"] == "1.75"
     assert body["fx_direction"] == "inverse"
     assert body["fx"]["source"] == "inverse-test"
 
