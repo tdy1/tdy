@@ -113,11 +113,15 @@ def validate_gbl_case(payload: Mapping[str, Any]) -> None:
     source_results = payload["source_results"]
     if not isinstance(source_results, list):
         raise GBLCaseValidationError("source_results must be an array")
+    result_ids: set[str] = set()
     for result in source_results:
         if not isinstance(result, Mapping):
             raise GBLCaseValidationError("Each source result must be an object")
         for key in ("result_id", "result_version", "source_system", "source_reference", "status"):
             _required(result, key, "source_result")
+        if result["result_id"] in result_ids:
+            raise GBLCaseValidationError(f"Duplicate source result ID: {result["result_id"]}")
+        result_ids.add(result["result_id"])
 
 
 def import_gbl_case(payload: Mapping[str, Any]) -> GBLCase:
@@ -163,3 +167,30 @@ def import_gbl_case(payload: Mapping[str, Any]) -> GBLCase:
         scenarios=tuple(payload["scenarios"]),
         source_results=source_results,
     )
+
+
+def export_gbl_case(case: GBLCase, contract_version: str = CONTRACT_VERSION) -> dict[str, Any]:
+    if contract_version != CONTRACT_VERSION:
+        raise GBLCaseValidationError(f"Unsupported contract version: {contract_version}")
+    return {
+        "contract_version": contract_version,
+        "business": {
+            "business_id": case.business_case.case_id,
+            "name": case.business_case.name,
+            "sector": case.governance.get("sector", "Unspecified"),
+            "geography": case.governance.get("geography", "Unspecified"),
+        },
+        "governance": dict(case.governance),
+        "currency": {
+            "base_currency": case.business_case.base_currency.code,
+            **({"presentation_currency": case.presentation_currency} if case.presentation_currency else {}),
+            **({"fx_as_of": case.fx_as_of} if case.fx_as_of else {}),
+            **({"fx_source": case.fx_source} if case.fx_source else {}),
+        },
+        "assumptions": [
+            {"key": a.key, "value": str(a.value), "unit": a.unit, "evidence_class": a.evidence_class.value, "source": a.source, "editable": a.editable}
+            for a in case.business_case.assumptions.values()
+        ],
+        "scenarios": [dict(s) for s in case.scenarios],
+        "source_results": [r.__dict__.copy() for r in case.source_results],
+    }
