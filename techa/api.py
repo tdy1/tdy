@@ -35,6 +35,7 @@ class FinancialRequest(BaseModel):
     presentation_currency: str | None = Field(default=None, min_length=3, max_length=3)
     fx_as_of: str | None = Field(default=None, min_length=1)
 
+
 class FxRateRequest(BaseModel):
     from_currency: str = Field(min_length=3, max_length=3)
     to_currency: str = Field(min_length=3, max_length=3)
@@ -116,19 +117,41 @@ def calculate(req: FinancialRequest):
         if presentation_currency != base_currency:
             if not req.fx_as_of:
                 raise ValueError("fx_as_of is required when presentation currency differs from base currency")
+
             fx = _store.get_fx_rate(base_currency, presentation_currency, req.fx_as_of)
+            fx_direction = "direct"
             if fx is None:
-                raise ValueError(f"No stored FX rate for {base_currency}->{presentation_currency} as_of={req.fx_as_of}")
+                fx = _store.get_fx_rate(presentation_currency, base_currency, req.fx_as_of)
+                fx_direction = "inverse" if fx is not None else "unavailable"
+            if fx is None:
+                raise ValueError(
+                    f"No stored FX rate for {base_currency}->{presentation_currency} "
+                    f"(direct or inverse) as_of={req.fx_as_of}"
+                )
+
             converter = CurrencyConverter({(fx.from_currency, fx.to_currency): fx})
             presented = converter.present_financial_result(result, base_currency, presentation_currency)
             audit = AuditRecord.create(
-                event="currency.present", case_id="ADHOC", engine_version="0.1.0",
-                inputs={"base_currency": base_currency, "presentation_currency": presentation_currency,
-                        "fx_as_of": fx.as_of, "fx_source": fx.source, "fx_rate": fx.rate},
+                event="currency.present",
+                case_id="ADHOC",
+                engine_version="0.1.0",
+                inputs={
+                    "base_currency": base_currency,
+                    "presentation_currency": presentation_currency,
+                    "fx_as_of": fx.as_of,
+                    "fx_source": fx.source,
+                    "fx_rate": fx.rate,
+                    "fx_direction": fx_direction,
+                },
                 outputs={"financial": result, "presented": presented},
             )
             _store.save_audit_record(audit)
-            response.update({"presentation": presented, "fx": fx, "audit_digest": audit.digest()})
+            response.update({
+                "presentation": presented,
+                "fx": fx,
+                "fx_direction": fx_direction,
+                "audit_digest": audit.digest(),
+            })
         else:
             response["presentation"] = result
         return jsonable(response)
