@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from techa.core.models import Assumption, BusinessCase, Currency, EvidenceClass, FxRate
+from techa.core.universe import BusinessLifecycle, BusinessUniverseItem
 from techa.core.evidence import EvidenceItem, EvidenceRegistry
 from techa.core.scenario import Scenario
 from techa.core.serialization import jsonable
@@ -24,6 +25,19 @@ _store = SQLiteStore(Path("techa.db"))
 _store.initialize(Path(__file__).parent / "storage" / "schema.sql")
 _simulation = SimulationService(_store)
 _sensitivity = SensitivityService(_simulation, _store)
+
+
+class UniverseItemRequest(BaseModel):
+    business_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    sector: str = Field(min_length=1)
+    geography: str = Field(min_length=1)
+    lifecycle_status: BusinessLifecycle = BusinessLifecycle.UNIVERSE
+    active_case_id: str | None = None
+
+
+class UniverseStatusRequest(BaseModel):
+    lifecycle_status: BusinessLifecycle
 
 
 class FinancialRequest(BaseModel):
@@ -84,6 +98,48 @@ def home() -> str:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "engine": "techa"}
+
+
+@app.post("/v1/gbl/universe")
+def save_universe_item(req: UniverseItemRequest):
+    try:
+        item = BusinessUniverseItem(
+            business_id=req.business_id, name=req.name, sector=req.sector,
+            geography=req.geography, lifecycle_status=req.lifecycle_status,
+            active_case_id=req.active_case_id,
+        )
+        _store.save_universe_item(item)
+        return jsonable(item)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/v1/gbl/universe")
+def list_universe_items(lifecycle_status: BusinessLifecycle | None = None):
+    items = _store.list_universe_items(lifecycle_status.value if lifecycle_status else None)
+    return {"count": len(items), "items": jsonable(items)}
+
+
+@app.get("/v1/gbl/universe/{business_id}")
+def get_universe_item(business_id: str):
+    item = _store.get_universe_item(business_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Business universe item not found")
+    return jsonable(item)
+
+
+@app.patch("/v1/gbl/universe/{business_id}/lifecycle")
+def update_universe_lifecycle(business_id: str, req: UniverseStatusRequest):
+    item = _store.get_universe_item(business_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Business universe item not found")
+    updated = BusinessUniverseItem(
+        business_id=item.business_id, name=item.name, sector=item.sector,
+        geography=item.geography, lifecycle_status=req.lifecycle_status,
+        active_case_id=item.active_case_id,
+    )
+    _store.save_universe_item(updated)
+    return jsonable(updated)
 
 
 @app.post("/v1/fx-rates")
