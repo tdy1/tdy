@@ -151,3 +151,22 @@ def test_workspace_simulation_supports_presentation_currency_and_audit():
     audit = client.get(f"/v1/business-cases/{case_id}/audit")
     assert audit.status_code == 200
     assert any(r["event"] == "currency.present" for r in audit.json()["records"])
+
+
+def test_workspace_blocked_evidence_prevents_simulation():
+    case_id = "WORKSPACE-API-006"
+    created = client.post("/v1/business-cases", json=_case(case_id))
+    assert created.status_code == 200
+
+    changed = client.patch(
+        f"/v1/business-cases/{case_id}/assumptions/selling_price/evidence",
+        json={"evidence_class": "REQUIRES_PRIMARY_VERIFICATION", "source": "Pending verification"},
+    )
+    assert changed.status_code == 200
+
+    simulated = client.post(
+        f"/v1/business-cases/{case_id}/simulate",
+        json={"scenario_id": "BASE", "scenario_name": "Base Case", "overrides": {}},
+    )
+    assert simulated.status_code == 422
+    assert "Simulation blocked by evidence requiring verification" in simulated.json()["detail"]
