@@ -183,8 +183,10 @@ def test_workspace_blocked_evidence_prevents_simulation():
         f"/v1/business-cases/{case_id}/simulate",
         json={"scenario_id": "BASE", "scenario_name": "Base Case", "overrides": {}},
     )
-    assert simulated.status_code == 422
-    assert "Simulation blocked by evidence requiring verification" in simulated.json()["detail"]
+    assert simulated.status_code == 409
+    detail = simulated.json()["detail"]
+    assert detail["status"] == "BLOCKED"
+    assert "selling_price" in detail["blocking_items"]
 
 
 def test_workspace_sensitivity_is_executable_and_audited():
