@@ -138,3 +138,43 @@ def test_gbl_universe_rejects_different_active_case():
     })
     assert client.post("/v1/gbl/universe/549/instantiate", json={"case_id": "549-case-v1"}).status_code == 200
     assert client.post("/v1/gbl/universe/549/instantiate", json={"case_id": "549-case-v2"}).status_code == 409
+
+
+def test_gbl_business_intake_creates_case_and_advances_lifecycle():
+    created = client.post("/v1/gbl/universe", json={
+        "business_id": "560",
+        "name": "Intake Test Business",
+        "sector": "Agriculture",
+        "geography": "Ethiopia",
+    })
+    assert created.status_code == 200
+    intake = client.post("/v1/gbl/universe/560/intake", json={
+        "case_id": "560-case-v1",
+        "base_currency": "ETB",
+    })
+    assert intake.status_code == 200
+    body = intake.json()
+    assert body["business"]["lifecycle_status"] == "INGESTED"
+    assert body["business"]["active_case_id"] == "560-case-v1"
+    assert body["case"]["case_id"] == "560-case-v1"
+    fetched = client.get("/v1/business-cases/560-case-v1")
+    assert fetched.status_code == 200
+
+
+def test_gbl_business_intake_rejects_duplicate_case():
+    client.post("/v1/gbl/universe", json={
+        "business_id": "561",
+        "name": "Duplicate Intake Test",
+        "sector": "Agriculture",
+        "geography": "Ethiopia",
+    })
+    first = client.post("/v1/gbl/universe/561/intake", json={
+        "case_id": "561-case-v1",
+        "base_currency": "ETB",
+    })
+    assert first.status_code == 200
+    second = client.post("/v1/gbl/universe/561/intake", json={
+        "case_id": "561-case-v2",
+        "base_currency": "ETB",
+    })
+    assert second.status_code == 409
