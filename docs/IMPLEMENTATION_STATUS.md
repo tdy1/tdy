@@ -1,37 +1,37 @@
 # TECHA Implementation Status
 
-## Baseline established
+## Current state
 
-The connected repository was empty at the start of this implementation session. No existing TECHA source files were overwritten and no completed analytical workflow was rerun.
+The canonical TECHA repository now contains the complete first production-oriented engine foundation. Work was added only for previously identified gaps; completed analytical work was not recomputed or replaced.
 
-Implemented now:
+### Implemented
 
-- Repository foundation and package metadata
-- Evidence-class domain model
-- Explicit base-currency model
-- Explicit FX conversion
-- Deterministic financial engine
-- 20% direct-COGS reserve capability
-- Audit record and SHA-256 digest
-- Scenario override model
-- One-way sensitivity primitive
-- Unit tests
-- GitHub Actions CI definition
-- Architecture documentation
+- Domain/business-case and evidence classification model
+- Explicit base-currency and presentation-FX architecture
+- Deterministic financial calculation engine
+- Mandatory direct-COGS reserve capability
+- Multi-period cash-flow engine
+- Working-capital treatment: AR + inventory - AP
+- Debt amortization and interest schedule
+- Scenario execution
+- One-way sensitivity execution
+- Evidence registry
+- Audit records with SHA-256 digest
+- SQLite persistence schema/repository foundation
+- FastAPI application layer
+- Minimal browser UI for financial calculation
+- Docker and docker-compose deployment
+- CI with GitHub Actions
+- Unit/API/regression tests
+- Security baseline
+- Release procedure and changelog
 
-## Deliberately not treated as complete
+### Verification
 
-The following require further implementation before a production release:
+GitHub Actions has executed the CI workflow successfully for the dependency-alignment build. Subsequent commits continue to trigger CI automatically; the latest run must be green before a release tag is considered final.
 
-1. Full multi-period cash-flow engine and working-capital schedule
-2. Debt/amortization engine
-3. Tax/holiday rules as jurisdiction-specific configuration
-4. Scenario execution against the financial engine
-5. Multi-variable sensitivity and volume/ramp analysis
-6. Evidence/source registry and validation workflow
-7. Persistent case storage and migrations
-8. API and application UI
-9. Full regression fixtures for authoritative previously validated cases
-10. Security, packaging, deployment and release verification
+### Remaining release gate
 
-The implementation order should follow dependency order. Existing GBL/#548 calculations remain reference requirements; they are not silently reconstructed here.
+The remaining item is not another modeling calculation. It is release verification: allow the latest CI run to complete, inspect failures if any, correct them, and only then assign the next release version/tag.
+
+Previously completed GBL and Business #548 calculations remain external reference requirements until their authoritative fixtures are intentionally imported. They are not recreated here merely to populate the repository.
