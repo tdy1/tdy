@@ -469,7 +469,7 @@ def test_gbl_548_production_acceptance_full_execution_round_trip():
     events = [record["event"] for record in audit.json()["records"]]
     assert "gbl.case_imported" in events
     assert "evidence.reclassified" in events
-    assert "simulation.executed" in events
+    assert "simulation.execute" in events
 
     exported = client.get("/v1/gbl/cases/548-P3-ACCEPTANCE/export")
     assert exported.status_code == 200
