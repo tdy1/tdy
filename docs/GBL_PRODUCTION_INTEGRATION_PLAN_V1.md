@@ -113,5 +113,6 @@ The existing 0.1.0 engine baseline remains the stable foundation. Production int
 - Docker verification
 - documentation
 - release readiness
+- readiness/reconciliation/integrity UI hardening
 
-**Current status:** P0 foundation complete. P1 is the next implementation boundary.
+**Current status:** P0–P3 complete. P4 hardening is in progress; the latest completed CI runs are green. Formal GitHub tag/release publication remains pending because the connected GitHub interface does not expose tag/release creation.
