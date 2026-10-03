@@ -60,7 +60,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;
 <h2>4. Evidence & Governance</h2>
 <p><span class="badge">CLASSIFIED</span><span class="badge">EDITABLE</span><span class="badge">AUDITABLE</span></p>
 <button id="evidence" class="secondary">Review Evidence Status</button>
-<div id="evidence_out" class="status">Evidence status not loaded.</div>
+<div id="evidence_out" class="status">Evidence status not loaded.</div><div id="evidence_editor"></div>
 </section>
 <section class="card results">
 <h2>5. Simulation Result</h2><div id="metrics" class="metric"></div><pre id="out">No simulation run yet.</pre>
@@ -74,7 +74,19 @@ function renderEvidence(body){
  const blockers=body.blocking_items||[];
  $('evidence_out').innerHTML='<strong>'+body.items.length+' assumption(s)</strong> classified. '+
  (blockers.length?'<b>'+blockers.length+' blocking item(s)</b> require primary/field verification.':'No blocking evidence classes.')+
- '<div style="margin-top:8px">'+body.items.map(x=>'<div><b>'+x.key+'</b>: '+x.evidence_class+(x.source?' · source: '+x.source:'')+(x.executable?'':' · BLOCKING')+'</div>').join('')+'</div>';
+ '<div style="margin-top:8px">'+body.items.map(x=>'<div style="border-top:1px solid #dfe5ea;padding:10px 0"><b>'+x.key+'</b> · '+x.evidence_class+(x.source?' · source: '+x.source:'')+(x.blocking?' · <b>BLOCKING</b>':'')+
+ '<div class="fields" style="margin-top:8px"><label>Evidence class<select id="ev_'+x.key+'">'+
+ ['VERIFIED_FACT','INDICATIVE_OBSERVED_DATA','COST_ENGINEERING_ESTIMATE','MARKET_ASSUMPTION','ANALYTICAL_CONCLUSION','REQUIRES_PRIMARY_VERIFICATION','FIELD_VALIDATION_REQUIREMENTS'].map(v=>'<option'+(v===x.evidence_class?' selected':'')+'>'+v+'</option>').join('')+
+ '</select></label><label>Source<input id="src_'+x.key+'" value="'+(x.source||'').replace(/"/g,'&quot;')+'" placeholder="Evidence source / record"></label></div>'+
+ '<button class="secondary" onclick="reclassifyEvidence(\''+x.key+'\')">Save Evidence Classification</button></div>').join('')+'</div>';
+}
+async function reclassifyEvidence(key){
+ try{
+  const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/assumptions/'+encodeURIComponent(key)+'/evidence',{method:'PATCH',
+   body:JSON.stringify({evidence_class:$('ev_'+key).value,source:$('src_'+key).value.trim()||null})});
+  status('Evidence classification updated and audited: '+body.audit_digest);
+  $('evidence').click();
+ }catch(e){status('Evidence update error: '+e.message);}
 }
 function assumptions(){return [
 ['units_sold',n('units_sold'),'units'],['selling_price',n('selling_price'),'base_currency/unit'],
