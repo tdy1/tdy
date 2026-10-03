@@ -53,14 +53,14 @@ pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;
 <label>Override units sold<input id="override_units" type="number" step="any" placeholder="optional"></label>
 </div>
 <button id="save_fx" class="secondary">Save FX Rate</button><button id="simulate">Run Base / Scenario Simulation</button>
-<button id="load" class="secondary">Reload Case</button><button id="audit" class="secondary">View Audit Trail</button>
+<button id="load" class="secondary">Reload Case</button><button id="import_gbl" class="secondary">Load GBL Contract</button><button id="export_gbl" class="secondary">Export GBL Contract</button><button id="audit" class="secondary">View Audit Trail</button>
 <div id="status" class="status">Ready.</div>
 </section>
 <section class="card">
 <h2>4. Evidence & Governance</h2>
 <p><span class="badge">CLASSIFIED</span><span class="badge">EDITABLE</span><span class="badge">AUDITABLE</span></p>
 <button id="evidence" class="secondary">Review Evidence Status</button><button id="sensitivity" class="secondary">Run Price Sensitivity</button>
-<div id="evidence_out" class="status">Evidence status not loaded.</div><div id="evidence_editor"></div><div id="audit_out" class="status">Audit trail not loaded.</div>
+<div id="gbl_out" class="status">GBL contract not loaded.</div><div id="evidence_out" class="status">Evidence status not loaded.</div><div id="evidence_editor"></div><div id="audit_out" class="status">Audit trail not loaded.</div>
 </section>
 <section class="card results">
 <h2>5. Simulation Result</h2><div id="metrics" class="metric"></div><div id="presentation_out" class="status">Presentation result not available.</div><pre id="out">No simulation run yet.</pre>
@@ -126,4 +126,18 @@ const key=['revenue','total_cogs_and_reserve','operating_profit','tax','net_prof
 return '<div>'+label+'<strong>'+f[key]+'</strong></div>';}).join('');
 $('out').textContent=JSON.stringify(body,null,2);status('Simulation completed and audit record persisted.');
 }catch(e){status('Error: '+e.message);}};
+
+$('import_gbl').onclick=async()=>{try{
+ const id=$('case_id').value.trim();
+ const body=await call('/v1/gbl/cases/'+encodeURIComponent(id));
+ $('name').value=body.business_metadata.name;$('currency').value=body.business_metadata.base_currency||$('currency').value;
+ $('scenario_name').value=(body.scenarios[0]&&body.scenarios[0].name)||'Base Case';
+ $('gbl_out').innerHTML='<strong>GBL contract loaded</strong> · '+body.contract_version+' · '+body.governance.state+' · '+body.governance.human_gate+' · '+body.scenarios.length+' scenario(s) · '+body.source_results.length+' source result(s).';
+ $('out').textContent=JSON.stringify(body,null,2);status('GBL metadata loaded and preserved.');
+}catch(e){status('GBL load error: '+e.message);}};
+$('export_gbl').onclick=async()=>{try{
+ const body=await call('/v1/gbl/cases/'+encodeURIComponent($('case_id').value.trim())+'/export');
+ $('gbl_out').innerHTML='<strong>GBL contract exported</strong> · '+body.contract.contract_version+' · audit '+body.audit_digest;
+ $('out').textContent=JSON.stringify(body.contract,null,2);status('GBL contract exported and audit record persisted.');
+}catch(e){status('GBL export error: '+e.message);}};
 </script></body></html>
