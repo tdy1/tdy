@@ -370,6 +370,8 @@ def test_workspace_browser_surface_exposes_gbl_controls():
         'Execution readiness',
         'results_reconciliation_out',
         'authoritative GBL results preserved',
+        'id="integrity_out"',
+        'Audit integrity:',
     ]
     for marker in required_controls:
         assert marker in html
