@@ -27,11 +27,13 @@ GBL supplies canonical business identity and classification. TECHA stores and op
 Minimum identity: business_id, business name, sector, geography, governance state, human gate, steps frozen through.
 
 ### B. Business Intake
-A business enters TECHA through GBL Case Contract v1.
+A business can enter TECHA through either an imported GBL Case Contract v1 or the governed Business Universe intake path.
 
-Intake validates contract, identity, evidence classes, governance, scenarios, currency, and source-result reconciliation.
+The Business Universe path creates an executable Business Case, assigns the explicit calculation currency, links the active case to the canonical business identity, advances lifecycle through CANDIDATE → INGESTED, and records a `gbl.business.intake` audit event.
 
-Intake does not promote evidence, change governance, recalculate authoritative source results, infer missing FX, or replace source-result identity.
+Contract intake validates identity, evidence classes, governance, scenarios, currency, and source-result reconciliation.
+
+Neither intake path promotes evidence, silently changes governance, recalculates authoritative source results, infers missing FX, or replaces source-result identity.
 
 ### C. Governance Workspace
 Governance is visible before simulation: State, Human Gate, frozen-through step, blockers, evidence counts, executable status, and source-result status.
@@ -80,6 +82,18 @@ Acceptance must prove:
 - audit lineage is generated
 
 The #548 case is an integration fixture/use case, not engine-specific logic.
+
+## Business Universe → Intake → Case Lifecycle
+
+The Business Universe is the canonical registry layer. Creating a universe item does not constitute investment clearance or feasibility approval.
+
+The governed lifecycle currently implemented is:
+
+`UNIVERSE → CANDIDATE → INGESTED → GOVERNANCE_HOLD / SIMULATION_READY → SIMULATED → REVIEW → CLEARED / NOT_CLEARED`
+
+Lifecycle transitions are explicit and audited. The lifecycle map is an implementation control and remains subject to formal GBL governance review; it is not silently treated as a new frozen methodological step.
+
+The Business Intake operation is deliberately separate from investment clearance: it creates the executable case and establishes lineage, while evidence gates and Human Gate controls continue to govern simulation and investment decisions.
 
 ## Versioning boundary
 
