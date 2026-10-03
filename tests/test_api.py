@@ -87,3 +87,48 @@ def test_gbl_business_universe_lifecycle_api():
     fetched = client.get("/v1/gbl/universe/548")
     assert fetched.status_code == 200
     assert fetched.json()["active_case_id"] is None
+
+
+def test_gbl_universe_instantiates_existing_case():
+    universe = client.post("/v1/gbl/universe", json={
+        "business_id": "548",
+        "name": "Dehydrated Vegetable Production",
+        "sector": "Agriculture & Agribusiness",
+        "geography": "Ethiopia",
+    })
+    assert universe.status_code == 200
+
+    case = client.post("/v1/business-cases", json={
+        "case_id": "548-case-v1",
+        "name": "Dehydrated Vegetable Production",
+        "base_currency": "ETB",
+    })
+    assert case.status_code == 200
+
+    linked = client.post("/v1/gbl/universe/548/instantiate", json={
+        "case_id": "548-case-v1",
+    })
+    assert linked.status_code == 200
+    assert linked.json()["lifecycle_status"] == "INGESTED"
+    assert linked.json()["active_case_id"] == "548-case-v1"
+
+
+def test_gbl_universe_rejects_different_active_case():
+    client.post("/v1/gbl/universe", json={
+        "business_id": "549",
+        "name": "Business 549",
+        "sector": "Agriculture",
+        "geography": "Ethiopia",
+    })
+    client.post("/v1/business-cases", json={
+        "case_id": "549-case-v1",
+        "name": "Business 549",
+        "base_currency": "ETB",
+    })
+    client.post("/v1/business-cases", json={
+        "case_id": "549-case-v2",
+        "name": "Business 549",
+        "base_currency": "ETB",
+    })
+    assert client.post("/v1/gbl/universe/549/instantiate", json={"case_id": "549-case-v1"}).status_code == 200
+    assert client.post("/v1/gbl/universe/549/instantiate", json={"case_id": "549-case-v2"}).status_code == 409
