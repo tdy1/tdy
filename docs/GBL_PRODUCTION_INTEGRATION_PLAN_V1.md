@@ -38,20 +38,23 @@ Neither intake path promotes evidence, silently changes governance, recalculates
 ### C. Governance Workspace
 Governance is visible before simulation: State, Human Gate, frozen-through step, blockers, evidence counts, executable status, source-result status, and case-level identity/currency summary. The workspace distinguishes execution readiness from investment clearance.
 
-### D. Scenario Workspace
+### D. Active Case Navigation
+The workspace can enumerate universe records with active executable cases and open each case directly into its governance-first summary. Navigation does not alter case state or source results.
+
+### E. Scenario Workspace
 GBL scenarios become first-class executable configurations. Initial model: S1, S2, S3, explicit overrides, scenario-level execution audit. The generic engine remains unaware of #548-specific meanings.
 
-### E. Evidence Workspace
+### F. Evidence Workspace
 Each assumption exposes value, unit, evidence class, source, editable flag, blocking status, and executable status. Reclassification requires an explicit audited action.
 
-### F. Simulation Workspace
+### G. Simulation Workspace
 Execution sequence:
 Business Case → Governance check → Evidence gate → Scenario selection → Financial engine → Presentation currency → Audit record → Result.
 
-### G. Results Workspace
+### H. Results Workspace
 Results distinguish TECHA-calculated simulation results, imported GBL source results, analytical interpretation, and unresolved verification requirements. These must not be visually conflated.
 
-### H. Audit / Integrity
+### I. Audit / Integrity
 Material state-changing operations receive audit records. Minimum events: gbl.case_imported, gbl.case_exported, simulation.execute, sensitivity.executed, evidence.reclassified, currency.presented.
 
 ## Production UI information architecture
