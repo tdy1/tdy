@@ -23,6 +23,7 @@ class GBLSourceResult:
 @dataclass(frozen=True)
 class GBLCase:
     business_case: BusinessCase
+    business_metadata: Mapping[str, Any]
     governance: Mapping[str, Any]
     presentation_currency: str | None
     fx_as_of: str | None
@@ -160,6 +161,7 @@ def import_gbl_case(payload: Mapping[str, Any]) -> GBLCase:
             base_currency=Currency(currency["base_currency"], currency["base_currency"]),
             assumptions=assumptions,
         ),
+        business_metadata=dict(business),
         governance=dict(governance),
         presentation_currency=currency.get("presentation_currency"),
         fx_as_of=currency.get("fx_as_of"),
@@ -177,8 +179,8 @@ def export_gbl_case(case: GBLCase, contract_version: str = CONTRACT_VERSION) -> 
         "business": {
             "business_id": case.business_case.case_id,
             "name": case.business_case.name,
-            "sector": case.governance.get("sector", "Unspecified"),
-            "geography": case.governance.get("geography", "Unspecified"),
+            "sector": case.business_metadata["sector"],
+            "geography": case.business_metadata["geography"],
         },
         "governance": dict(case.governance),
         "currency": {
