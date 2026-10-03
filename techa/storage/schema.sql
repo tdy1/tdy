@@ -17,3 +17,15 @@ CREATE TABLE IF NOT EXISTS audit_record (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_case_recorded
 ON audit_record(case_id, recorded_at);
+
+CREATE TABLE IF NOT EXISTS gbl_case_metadata (
+ case_id TEXT PRIMARY KEY,
+ contract_version TEXT NOT NULL,
+ governance_json TEXT NOT NULL,
+ presentation_currency TEXT,
+ fx_as_of TEXT,
+ fx_source TEXT,
+ scenarios_json TEXT NOT NULL,
+ source_results_json TEXT NOT NULL,
+ FOREIGN KEY(case_id) REFERENCES business_case(case_id)
+);
