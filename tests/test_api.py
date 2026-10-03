@@ -246,3 +246,5 @@ def test_gbl_case_summary_includes_linked_universe_identity():
     assert universe["business_id"] == "548-IDENTITY"
     assert universe["active_case_id"] == "548-IDENTITY"
     assert universe["lifecycle_status"] == "INGESTED"
+    assert summary.json()["gbl_contract_loaded"] is False
+    assert summary.json()["governance"] == {}
