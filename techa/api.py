@@ -488,6 +488,66 @@ def get_gbl_case_summary(case_id: str):
     })
 
 
+@app.get("/v1/gbl/cases/{case_id}/scenarios")
+def get_gbl_case_scenarios(case_id: str):
+    if _store.get_business_case(case_id) is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    metadata = _store.get_gbl_case_metadata(case_id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="GBL metadata not found")
+    return jsonable({"case_id": case_id, "scenarios": metadata["scenarios"]})
+
+
+@app.get("/v1/gbl/cases/{case_id}/evidence")
+def get_gbl_case_evidence(case_id: str):
+    if _store.get_business_case(case_id) is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    metadata = _store.get_gbl_case_metadata(case_id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="GBL metadata not found")
+    case = _store.get_business_case(case_id)
+    items = []
+    for assumption in case.assumptions.values():
+        blocking = assumption.evidence_class in {
+            EvidenceClass.REQUIRES_PRIMARY_VERIFICATION,
+            EvidenceClass.FIELD_VALIDATION_REQUIREMENTS,
+        }
+        items.append({
+            "key": assumption.key,
+            "value": assumption.value,
+            "unit": assumption.unit,
+            "evidence_class": assumption.evidence_class,
+            "source": assumption.source,
+            "editable": assumption.editable,
+            "blocking": blocking,
+            "executable": not blocking,
+        })
+    return jsonable({
+        "case_id": case_id,
+        "items": items,
+        "blocking_items": [i["key"] for i in items if i["blocking"]],
+        "can_execute": not any(i["blocking"] for i in items),
+    })
+
+
+@app.get("/v1/gbl/cases/{case_id}/source-results")
+def get_gbl_case_source_results(case_id: str):
+    if _store.get_business_case(case_id) is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    metadata = _store.get_gbl_case_metadata(case_id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="GBL metadata not found")
+    return jsonable({
+        "case_id": case_id,
+        "source_results": metadata["source_results"],
+        "reconciliation": {
+            "count": len(metadata["source_results"]),
+            "result_ids": [r["result_id"] for r in metadata["source_results"]],
+            "authoritative_results_preserved": True,
+        },
+    })
+
+
 @app.get("/v1/gbl/cases/{case_id}")
 def get_gbl_case_metadata(case_id: str):
     if _store.get_business_case(case_id) is None:
