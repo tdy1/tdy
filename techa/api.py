@@ -65,6 +65,8 @@ class SimulationRequest(BaseModel):
     scenario_id: str | None = Field(default=None, min_length=1)
     scenario_name: str = "Scenario"
     overrides: dict[str, Decimal] = Field(default_factory=dict)
+    presentation_currency: str | None = Field(default=None, min_length=3, max_length=3)
+    fx_as_of: str | None = Field(default=None, min_length=1)
 
 
 class SensitivityRequest(BaseModel):
@@ -318,12 +320,55 @@ def simulate_business_case(case_id: str, req: SimulationRequest):
         scenario = Scenario(req.scenario_id, req.scenario_name, req.overrides)
     try:
         result = _simulation.execute(case, scenario)
+        response = {
+            "case_id": result.case_id,
+            "scenario_id": result.scenario_id,
+            "financial": result.financial,
+            "audit": result.audit,
+            "audit_digest": result.audit.digest(),
+        }
+        presentation_currency = (req.presentation_currency or case.base_currency.code).upper()
+        base_currency = case.base_currency.code.upper()
+        if presentation_currency != base_currency:
+            if not req.fx_as_of:
+                raise ValueError("fx_as_of is required when presentation currency differs from base currency")
+            fx = _store.get_fx_rate(base_currency, presentation_currency, req.fx_as_of)
+            fx_direction = "direct"
+            if fx is None:
+                fx = _store.get_fx_rate(presentation_currency, base_currency, req.fx_as_of)
+                fx_direction = "inverse" if fx is not None else "unavailable"
+            if fx is None:
+                raise ValueError(
+                    f"No stored FX rate for {base_currency}->{presentation_currency} "
+                    f"(direct or inverse) as_of={req.fx_as_of}"
+                )
+            presented = CurrencyConverter(
+                {(fx.from_currency, fx.to_currency): fx}
+            ).present_financial_result(result.financial, base_currency, presentation_currency)
+            currency_audit = AuditRecord.create(
+                event="currency.present",
+                case_id=case.case_id,
+                engine_version="0.1.0",
+                inputs={
+                    "base_currency": base_currency,
+                    "presentation_currency": presentation_currency,
+                    "fx_as_of": fx.as_of,
+                    "fx_source": fx.source,
+                    "fx_rate": fx.rate,
+                    "fx_direction": fx_direction,
+                    "scenario_id": result.scenario_id,
+                },
+                outputs={"financial": result.financial, "presented": presented},
+            )
+            _store.save_audit_record(currency_audit)
+            response.update({
+                "presentation": presented,
+                "fx": fx,
+                "fx_direction": fx_direction,
+                "presentation_audit_digest": currency_audit.digest(),
+            })
+        else:
+            response["presentation"] = result.financial
+        return jsonable(response)
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return jsonable({
-        "case_id": result.case_id,
-        "scenario_id": result.scenario_id,
-        "financial": result.financial,
-        "audit": result.audit,
-        "audit_digest": result.audit.digest(),
-    })
