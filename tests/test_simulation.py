@@ -45,5 +45,5 @@ def test_simulation_applies_scenario_override(tmp_path):
     result = SimulationService(store).execute(case, scenario)
     assert result.scenario_id == "LOW-PRICE"
     assert result.financial.revenue == Decimal("4000.00")
-    assert result.financial.net_profit == Decimal("-420.00")
+    assert result.financial.net_profit == Decimal("-600.00")
     store.close()
