@@ -2,7 +2,7 @@
 
 ## Current state
 
-The canonical TECHA repository now contains the complete first production-oriented engine foundation. Work was added only for previously identified gaps; completed analytical work was not recomputed or replaced.
+The canonical TECHA repository contains the first production-oriented engine foundation plus durable multi-currency presentation. Work is being added only for identified implementation gaps; completed analytical work is not recomputed or replaced.
 
 ### Implemented
 
@@ -21,19 +21,26 @@ The canonical TECHA repository now contains the complete first production-orient
 - Audit records with SHA-256 digest
 - SQLite persistence schema/repository foundation
 - FastAPI application layer
-- Minimal browser UI for financial calculation
+- Durable dated FX-rate API
+- Exact-date direct and inverse FX presentation
+- Currency-presentation audit capture
+- Browser base/presentation currency controls
 - Docker and docker-compose deployment
 - CI with GitHub Actions
 - Unit/API/regression tests
 - Security baseline
 - Release procedure and changelog
 
+### Currency design decision
+
+TECHA uses **one calculation base currency per business case, with an independent presentation currency**. This is deliberately different from maintaining parallel financial calculations in ETB, USD, EUR, KES, TZS, UGX, etc.
+
+The financial engine remains currency-neutral: it calculates the business case in its declared base currency. Presentation conversion is a separate, auditable layer. This prevents exchange-rate changes from altering the underlying model and avoids duplicated financial logic.
+
+The architecture supports arbitrary three-letter currency codes. The browser currently exposes the initial operational set ETB, USD, EUR, KES, TZS, and UGX; the engine/API are not limited to that list.
+
 ### Verification
 
-GitHub Actions is the release verification gate. A recent sensitivity test cycle exposed incorrect test expectations for the financial engine's tax treatment; those expectations have been corrected. The newest CI cycle must be green before a release tag is considered final.
-
-### Remaining release gate
-
-The remaining item is release verification: allow the corrected CI cycle to complete, inspect any failures, correct them, and only then assign the next release version/tag.
+The latest GitHub Actions run for the corrected presentation-precision regression is green. Release verification must continue to include any subsequent implementation commits.
 
 Previously completed GBL and Business #548 calculations remain external reference requirements until their authoritative fixtures are intentionally imported. They are not recreated here merely to populate the repository.
