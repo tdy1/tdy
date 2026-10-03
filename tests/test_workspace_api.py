@@ -553,3 +553,15 @@ def test_workspace_case_summary_controls_are_present():
         'Currency:',
     ):
         assert marker in html
+
+
+def test_workspace_active_case_navigation_controls_are_present():
+    html = Path("techa/web/index.html").read_text(encoding="utf-8")
+    for marker in (
+        'id="load_cases"',
+        'id="recent_cases_out"',
+        '/v1/gbl/cases',
+        'Open Summary',
+        'Active cases loaded',
+    ):
+        assert marker in html
