@@ -608,17 +608,8 @@ def get_gbl_case_summary(case_id: str):
     if case is None:
         raise HTTPException(status_code=404, detail="Business case not found")
     metadata = _store.get_gbl_case_metadata(case_id)
-    if metadata is None:
-        raise HTTPException(status_code=404, detail="GBL metadata not found")
+    universe_item = _store.get_universe_item_by_case_id(case_id)
 
-    blocking_items = [
-        assumption.key
-        for assumption in case.assumptions.values()
-        if assumption.evidence_class in {
-            EvidenceClass.REQUIRES_PRIMARY_VERIFICATION,
-            EvidenceClass.FIELD_VALIDATION_REQUIREMENTS,
-        }
-    ]
     evidence = EvidenceRegistry()
     for assumption in case.assumptions.values():
         evidence.add(EvidenceItem(
@@ -628,13 +619,26 @@ def get_gbl_case_summary(case_id: str):
             source=assumption.source,
         ))
     readiness = ExecutionReadinessService.assess(evidence)
-    scenarios = list(metadata["scenarios"])
-    source_results = list(metadata["source_results"])
-    governance = dict(metadata["governance"])
-    universe_item = _store.get_universe_item_by_case_id(case_id)
+
+    business = (
+        dict(metadata["business_metadata"]) if metadata
+        else {
+            "business_id": universe_item.business_id if universe_item else None,
+            "name": universe_item.name if universe_item else case.name,
+            "sector": universe_item.sector if universe_item else None,
+            "geography": universe_item.geography if universe_item else None,
+        }
+    )
+    governance = dict(metadata["governance"]) if metadata else {}
+    scenarios = list(metadata["scenarios"]) if metadata else []
+    source_results = list(metadata["source_results"]) if metadata else []
+    presentation_currency = metadata["presentation_currency"] if metadata else case.base_currency.code
+    fx_as_of = metadata["fx_as_of"] if metadata else None
+    fx_source = metadata["fx_source"] if metadata else None
+
     return jsonable({
         "case_id": case_id,
-        "business": dict(metadata["business_metadata"]),
+        "business": business,
         "universe": (
             {
                 "business_id": universe_item.business_id,
@@ -645,16 +649,17 @@ def get_gbl_case_summary(case_id: str):
                 "active_case_id": universe_item.active_case_id,
             } if universe_item else None
         ),
+        "gbl_contract_loaded": metadata is not None,
         "governance": governance,
         "currency": {
             "base_currency": case.base_currency.code,
-            "presentation_currency": metadata["presentation_currency"],
-            "fx_as_of": metadata["fx_as_of"],
-            "fx_source": metadata["fx_source"],
+            "presentation_currency": presentation_currency,
+            "fx_as_of": fx_as_of,
+            "fx_source": fx_source,
         },
         "counts": {
             "assumptions": len(case.assumptions),
-            "blocking_evidence": len(blocking_items),
+            "blocking_evidence": len(readiness.blocking_items),
             "scenarios": len(scenarios),
             "source_results": len(source_results),
         },
@@ -662,7 +667,7 @@ def get_gbl_case_summary(case_id: str):
             "status": readiness.status,
             "can_execute": readiness.can_execute,
             "blocking_assumptions": list(readiness.blocking_items),
-            "investment_clearance": governance.get("human_gate") != "HOLD / NOT CLEARED",
+            "investment_clearance": governance.get("human_gate") not in {None, "", "HOLD / NOT CLEARED"},
         },
         "scenarios": scenarios,
         "source_results": source_results,
