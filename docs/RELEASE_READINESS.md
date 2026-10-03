@@ -52,7 +52,14 @@ CI builds the production Docker image and starts it, then checks the `/health` e
 - [x] TECHA-vs-GBL result reconciliation UI
 - [x] Audit-integrity UI status
 - [x] Persisted audit-digest integrity verification API and automated regression test
-- [ ] Formal Git tag/release publication — pending; current connected GitHub interface does not expose tag/release creation
+- [x] Final engineering freeze — TECHA v0.1.0 source, engine, workspace, tests, Docker verification, and GBL integration boundary frozen
+- [ ] Formal Git tag/release publication — administrative only; current connected GitHub interface does not expose tag/release creation
+
+## Final freeze status
+
+Engineering work for TECHA v0.1.0 is frozen. No further feature work is required for the executable baseline. Changes after this point require an explicit post-freeze change decision and a new verification cycle.
+
+The canonical executable deployment is the repository Docker image. The browser workspace is served by the FastAPI application at `/`.
 
 ## Important limitations
 
