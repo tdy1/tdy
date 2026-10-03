@@ -12,6 +12,7 @@ from techa.core.evidence import EvidenceItem, EvidenceRegistry
 from techa.core.scenario import Scenario
 from techa.core.serialization import jsonable
 from techa.core.simulation import SimulationService
+from techa.core.readiness import ExecutionReadinessService
 from techa.core.sensitivity_service import SensitivityService
 from techa.audit.record import AuditRecord
 from techa.financial.currency import CurrencyConverter
@@ -328,6 +329,13 @@ def simulate_business_case(case_id: str, req: SimulationRequest):
                 evidence_class=assumption.evidence_class,
                 source=assumption.source,
             ))
+        readiness = ExecutionReadinessService.assess(evidence)
+        if not readiness.can_execute:
+            raise HTTPException(status_code=409, detail={
+                "message": "Simulation execution is blocked by evidence requirements",
+                "status": readiness.status,
+                "blocking_items": list(readiness.blocking_items),
+            })
         result = _simulation.execute(case, scenario, evidence=evidence)
         response = {
             "case_id": result.case_id,
@@ -460,6 +468,15 @@ def get_gbl_case_summary(case_id: str):
             EvidenceClass.FIELD_VALIDATION_REQUIREMENTS,
         }
     ]
+    evidence = EvidenceRegistry()
+    for assumption in case.assumptions.values():
+        evidence.add(EvidenceItem(
+            evidence_id=assumption.key,
+            claim=f"{assumption.key} = {assumption.value} {assumption.unit}",
+            evidence_class=assumption.evidence_class,
+            source=assumption.source,
+        ))
+    readiness = ExecutionReadinessService.assess(evidence)
     scenarios = list(metadata["scenarios"])
     source_results = list(metadata["source_results"])
     governance = dict(metadata["governance"])
@@ -480,8 +497,10 @@ def get_gbl_case_summary(case_id: str):
             "source_results": len(source_results),
         },
         "execution_readiness": {
-            "can_execute": not blocking_items,
-            "blocking_assumptions": blocking_items,
+            "status": readiness.status,
+            "can_execute": readiness.can_execute,
+            "blocking_assumptions": list(readiness.blocking_items),
+            "investment_clearance": governance.get("human_gate") != "HOLD / NOT CLEARED",
         },
         "scenarios": scenarios,
         "source_results": source_results,
