@@ -515,3 +515,15 @@ def test_business_universe_workspace_controls_are_present():
         "not an investment clearance",
     ):
         assert marker in html
+
+
+def test_workspace_lifecycle_controls_are_present():
+    html = Path("techa/web/index.html").read_text(encoding="utf-8")
+    for marker in (
+        'id="universe_lifecycle"',
+        'id="universe_transition"',
+        '/lifecycle',
+        'Apply Lifecycle Transition',
+        'Lifecycle transition recorded and audited',
+    ):
+        assert marker in html
