@@ -401,6 +401,16 @@ def import_gbl_case_endpoint(req: GBLCaseImportRequest):
     try:
         imported = import_gbl_case(req.model_dump())
         _store.save_business_case(imported.business_case)
+        _store.save_gbl_case_metadata(
+            imported.business_case.case_id,
+            req.contract_version,
+            dict(imported.governance),
+            imported.presentation_currency,
+            imported.fx_as_of,
+            imported.fx_source,
+            list(imported.scenarios),
+            list(imported.source_results),
+        )
         audit = AuditRecord.create(
             event="gbl.case_imported",
             case_id=imported.business_case.case_id,
@@ -430,3 +440,13 @@ def import_gbl_case_endpoint(req: GBLCaseImportRequest):
         })
     except GBLCaseValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/v1/gbl/cases/{case_id}")
+def get_gbl_case_metadata(case_id: str):
+    if _store.get_business_case(case_id) is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    metadata = _store.get_gbl_case_metadata(case_id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="GBL metadata not found")
+    return jsonable({"case_id": case_id, **metadata})
