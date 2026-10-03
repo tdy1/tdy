@@ -63,7 +63,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;
 <div id="evidence_out" class="status">Evidence status not loaded.</div><div id="evidence_editor"></div><div id="audit_out" class="status">Audit trail not loaded.</div>
 </section>
 <section class="card results">
-<h2>5. Simulation Result</h2><div id="metrics" class="metric"></div><pre id="out">No simulation run yet.</pre>
+<h2>5. Simulation Result</h2><div id="metrics" class="metric"></div><div id="presentation_out" class="status">Presentation result not available.</div><pre id="out">No simulation run yet.</pre>
 </section>
 </div></div>
 <script>
@@ -120,6 +120,7 @@ if($('override_units').value!=='')overrides.units_sold=n('override_units');
 const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/simulate',{method:'POST',
 body:JSON.stringify({scenario_id:Object.keys(overrides).length?'SCENARIO':'BASE',scenario_name:$('scenario_name').value,overrides,presentation_currency:$('presentation_currency').value,fx_as_of:$('fx_as_of').value||null})});
 const f=body.financial;
+const p=body.presentation||f; $('presentation_out').innerHTML=body.presentation&&body.fx?'<strong>Presentation:</strong> '+body.fx.to_currency.code+' · FX '+body.fx.rate+' · '+body.fx.as_of+' · '+body.fx.source+' · '+body.fx_direction:'Presentation currency = calculation currency; no FX conversion applied.';
 $('metrics').innerHTML=['Revenue','Total COGS + Reserve','Operating Profit','Tax','Net Profit'].map((label,i)=>{
 const key=['revenue','total_cogs_and_reserve','operating_profit','tax','net_profit'][i];
 return '<div>'+label+'<strong>'+f[key]+'</strong></div>';}).join('');
