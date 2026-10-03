@@ -540,3 +540,16 @@ def test_workspace_business_intake_controls_are_present():
         'Business intake recorded and audited',
     ):
         assert marker in html
+
+
+def test_workspace_case_summary_controls_are_present():
+    html = Path("techa/web/index.html").read_text(encoding="utf-8")
+    for marker in (
+        'id="summary_case_id"',
+        'id="load_summary"',
+        '/summary',
+        'Execution readiness:',
+        'investment clearance:',
+        'Currency:',
+    ):
+        assert marker in html
