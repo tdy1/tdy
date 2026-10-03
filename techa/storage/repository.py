@@ -81,6 +81,22 @@ class SQLiteStore:
             )
             self.db.commit()
 
+    def get_fx_rate(self, from_currency: str, to_currency: str, as_of: str) -> FxRate | None:
+        source = from_currency.upper()
+        target = to_currency.upper()
+        with self._lock:
+            row = self.db.execute(
+                "SELECT from_currency,to_currency,rate,as_of,source "
+                "FROM fx_rate WHERE from_currency=? AND to_currency=? AND as_of=?",
+                (source, target, as_of),
+            ).fetchone()
+        if row is None:
+            return None
+        return FxRate(
+            from_currency=row[0], to_currency=row[1],
+            rate=Decimal(row[2]), as_of=row[3], source=row[4],
+        )
+
     def save_audit_record(self, record: AuditRecord) -> None:
         payload = json.dumps(
             {"inputs": record.inputs, "outputs": record.outputs},
