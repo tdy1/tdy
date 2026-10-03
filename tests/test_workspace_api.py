@@ -205,3 +205,37 @@ def test_workspace_same_currency_presentation_requires_no_fx():
     assert body["presentation"]["net_profit"] == "280.00"
     assert "fx" not in body
     assert "presentation_audit_digest" not in body
+
+
+
+def test_gbl_import_api_persists_case_and_audit():
+    from tests.test_gbl_integration import payload
+
+    data = payload()
+    data["business"]["business_id"] = "548-API"
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+    body = imported.json()
+    assert body["business_case"]["case_id"] == "548-API"
+    assert body["business_case"]["assumptions"]["selling_price"]["evidence_class"] == "REQUIRES_PRIMARY_VERIFICATION"
+    assert body["governance"]["human_gate"] == "HOLD / NOT CLEARED"
+    assert body["source_results"][0]["status"] == "AUTHORITATIVE_REFERENCE"
+    assert body["audit_digest"]
+
+    loaded = client.get("/v1/business-cases/548-API")
+    assert loaded.status_code == 200
+    assert loaded.json()["base_currency"]["code"] == "ETB"
+
+    audit = client.get("/v1/business-cases/548-API/audit")
+    assert audit.status_code == 200
+    assert any(record["event"] == "gbl.case_imported" for record in audit.json()["records"])
+
+
+def test_gbl_import_api_rejects_invalid_contract():
+    from tests.test_gbl_integration import payload
+
+    data = payload()
+    data["assumptions"][0]["evidence_class"] = "VERIFIED"
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 422
+    assert "Invalid evidence class" in imported.json()["detail"]
