@@ -1,6 +1,8 @@
 from __future__ import annotations
 from decimal import Decimal
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from techa.financial.engine import FinancialEngine, FinancialInputs
 
@@ -14,8 +16,13 @@ class FinancialRequest(BaseModel):
     operating_expenses: Decimal = Field(ge=0)
     tax_rate: Decimal = Field(default=Decimal("0"), ge=0, le=1)
 
+@app.get("/", response_class=HTMLResponse)
+def home()->str:
+    return (Path(__file__).parent/"web"/"index.html").read_text(encoding="utf-8")
+
 @app.get("/health")
-def health()->dict[str,str]: return {"status":"ok","engine":"techa"}
+def health()->dict[str,str]:
+    return {"status":"ok","engine":"techa"}
 
 @app.post("/v1/financial/calculate")
 def calculate(req:FinancialRequest)->dict[str,str]:
