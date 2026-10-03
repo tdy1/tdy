@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from techa.core.models import Assumption, BusinessCase, Currency, EvidenceClass, FxRate
+from techa.core.evidence import EvidenceItem, EvidenceRegistry
 from techa.core.scenario import Scenario
 from techa.core.serialization import jsonable
 from techa.core.simulation import SimulationService
@@ -319,7 +320,15 @@ def simulate_business_case(case_id: str, req: SimulationRequest):
     if req.scenario_id:
         scenario = Scenario(req.scenario_id, req.scenario_name, req.overrides)
     try:
-        result = _simulation.execute(case, scenario)
+        evidence = EvidenceRegistry()
+        for assumption in case.assumptions.values():
+            evidence.add(EvidenceItem(
+                evidence_id=assumption.key,
+                claim=f"{assumption.key} = {assumption.value} {assumption.unit}",
+                evidence_class=assumption.evidence_class,
+                source=assumption.source,
+            ))
+        result = _simulation.execute(case, scenario, evidence=evidence)
         response = {
             "case_id": result.case_id,
             "scenario_id": result.scenario_id,
