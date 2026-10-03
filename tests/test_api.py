@@ -159,6 +159,9 @@ def test_gbl_business_intake_creates_case_and_advances_lifecycle():
     assert body["case"]["case_id"] == "560-case-v1"
     fetched = client.get("/v1/business-cases/560-case-v1")
     assert fetched.status_code == 200
+    audit = client.get("/v1/business-cases/560-case-v1/audit")
+    assert audit.status_code == 200
+    assert any(record["event"] == "gbl.business.intake" for record in audit.json()["records"])
 
 
 def test_gbl_business_intake_rejects_duplicate_case():
