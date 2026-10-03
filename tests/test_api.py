@@ -208,3 +208,26 @@ def test_gbl_case_summary_preserves_governance_readiness_and_counts():
     assert body["counts"]["source_results"] == 1
     assert body["execution_readiness"]["status"] == "BLOCKED"
     assert body["execution_readiness"]["investment_clearance"] is False
+
+
+def test_gbl_active_case_navigation_lists_linked_cases():
+    client = TestClient(app)
+    data = {
+        "contract_version": "1.0",
+        "business": {"business_id": "548-NAV", "name": "Navigation Test Business", "sector": "Agriculture", "geography": "Ethiopia"},
+        "governance": {"state": "State 0", "human_gate": "HOLD / NOT CLEARED", "steps_frozen_through": 55},
+        "currency": {"base_currency": "ETB"},
+        "assumptions": [],
+        "scenarios": [],
+        "source_results": [],
+    }
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+    client.post("/v1/gbl/universe", json=data["business"])
+    linked = client.post("/v1/gbl/universe/548-NAV/instantiate", json={"case_id": "548-NAV"})
+    assert linked.status_code == 200
+    response = client.get("/v1/gbl/cases")
+    assert response.status_code == 200
+    match = next(x for x in response.json()["cases"] if x["business_id"] == "548-NAV")
+    assert match["case_id"] == "548-NAV"
+    assert match["lifecycle_status"] == "INGESTED"
