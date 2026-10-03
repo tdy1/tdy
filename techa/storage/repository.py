@@ -83,7 +83,7 @@ class SQLiteStore:
                    governance_json=excluded.governance_json,presentation_currency=excluded.presentation_currency,
                    fx_as_of=excluded.fx_as_of,fx_source=excluded.fx_source,scenarios_json=excluded.scenarios_json,
                    source_results_json=excluded.source_results_json""",
-                (case_id, contract_version, json.dumps(business_metadata, sort_keys=True, default=str), json.dumps(governance, sort_keys=True, default=str),
+                (case_id, json.dumps(business_metadata, sort_keys=True, default=str), contract_version, json.dumps(governance, sort_keys=True, default=str),
                  presentation_currency, fx_as_of, fx_source,
                  json.dumps(scenarios, sort_keys=True, default=str),
                  json.dumps(source_results, sort_keys=True, default=lambda o: o.__dict__)),
