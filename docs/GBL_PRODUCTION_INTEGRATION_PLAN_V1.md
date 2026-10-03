@@ -134,3 +134,7 @@ The existing 0.1.0 engine baseline remains the stable foundation. Production int
 - persisted audit-digest verification endpoint and workspace integrity verification
 
 **Current status:** P0–P3 complete. P4 engineering hardening is complete and CI is green. The only remaining release-readiness item is formal GitHub tag/release publication, which the connected GitHub interface does not expose. Formal GitHub tag/release publication remains pending because the connected GitHub interface does not expose tag/release creation.
+
+
+### Intake Case Summary Boundary
+A case created through the governed Business Universe intake path may exist before a GBL Case Contract v1 has been imported. The governance-first case summary therefore exposes **GBL Contract: LOADED / NOT LOADED** explicitly rather than fabricating governance metadata. Missing imported GBL metadata is not treated as investment clearance, and source results remain empty until a contract is actually imported.
