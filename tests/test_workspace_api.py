@@ -565,3 +565,14 @@ def test_workspace_active_case_navigation_controls_are_present():
         'Active cases loaded',
     ):
         assert marker in html
+
+
+def test_workspace_case_summary_surfaces_universe_identity():
+    html = Path("techa/web/index.html").read_text(encoding="utf-8")
+    for marker in (
+        "Universe:",
+        "lifecycle",
+        "active case",
+        "not linked",
+    ):
+        assert marker in html
