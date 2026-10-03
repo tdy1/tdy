@@ -184,7 +184,18 @@ def test_gbl_business_intake_rejects_duplicate_case():
 
 
 def test_gbl_case_summary_preserves_governance_readiness_and_counts():
-    data = _gbl_payload("548-SUMMARY")
+    client = TestClient(app)
+    data = {
+        "contract_version": "1.0",
+        "business": {"business_id": "548-SUMMARY", "name": "Dehydrated Vegetable Production", "sector": "Agriculture & Agribusiness", "geography": "Ethiopia"},
+        "governance": {"state": "State 0", "human_gate": "HOLD / NOT CLEARED", "steps_frozen_through": 55},
+        "currency": {"base_currency": "ETB"},
+        "assumptions": [
+            {"key": "selling_price", "value": "380", "unit": "ETB/kg", "evidence_class": "REQUIRES_PRIMARY_VERIFICATION", "source": "GBL #548 evidence register", "editable": True}
+        ],
+        "scenarios": [{"scenario_id": "S2", "name": "Rented facility", "overrides": {}}],
+        "source_results": [{"result_id": "548-S2-FINAL", "result_version": "1", "source_system": "GBL", "source_reference": "GBL #548", "status": "AUTHORITATIVE_REFERENCE"}],
+    }
     imported = client.post("/v1/gbl/import", json=data)
     assert imported.status_code == 200
     summary = client.get("/v1/gbl/cases/548-SUMMARY/summary")
@@ -193,7 +204,7 @@ def test_gbl_case_summary_preserves_governance_readiness_and_counts():
     assert body["business"] == data["business"]
     assert body["governance"] == data["governance"]
     assert body["currency"]["base_currency"] == "ETB"
-    assert body["counts"]["scenarios"] == len(data["scenarios"])
-    assert body["counts"]["source_results"] == len(data["source_results"])
+    assert body["counts"]["scenarios"] == 1
+    assert body["counts"]["source_results"] == 1
     assert body["execution_readiness"]["status"] == "BLOCKED"
     assert body["execution_readiness"]["investment_clearance"] is False
