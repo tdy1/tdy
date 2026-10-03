@@ -527,3 +527,16 @@ def test_workspace_lifecycle_controls_are_present():
         'Lifecycle transition recorded and audited',
     ):
         assert marker in html
+
+
+def test_workspace_business_intake_controls_are_present():
+    html = Path("techa/web/index.html").read_text(encoding="utf-8")
+    for marker in (
+        'id="universe_intake"',
+        'id="universe_case_id"',
+        'id="universe_base_currency"',
+        '/intake',
+        'Start Business Intake',
+        'Business intake recorded and audited',
+    ):
+        assert marker in html
