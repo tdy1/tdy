@@ -17,7 +17,9 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 <section class="card" id="universe"><h2>0. GBL Business Universe</h2><p class="sub">Canonical business registry. A universe item is not an investment clearance or feasibility conclusion.</p><div class="fields"><label>Business ID<input id="universe_business_id" value="548"></label><label>Business name<input id="universe_name" value="Dehydrated Vegetable Production"></label><label>Sector<input id="universe_sector" value="Agriculture & Agribusiness"></label><label>Geography<input id="universe_geography" value="Ethiopia"></label></div><button id="universe_save">Save Universe Business</button><button id="universe_load" class="secondary">Load Universe</button><div id="universe_out" class="status">Universe registry not loaded.</div>
 <div class="fields" style="margin-top:12px"><label>Lifecycle status<select id="universe_lifecycle">
 <option>UNIVERSE</option><option>CANDIDATE</option><option>INGESTED</option><option>GOVERNANCE_HOLD</option><option>SIMULATION_READY</option><option>SIMULATED</option><option>REVIEW</option><option>CLEARED</option><option>NOT_CLEARED</option>
-</select></label></div><button id="universe_transition" class="secondary">Apply Lifecycle Transition</button><div id="universe_lifecycle_out" class="status">Lifecycle transition not executed.</div></section><section class="card" id="home"><h2>GBL Home</h2><p class="sub">Global Business Lab execution workspace. TECHA executes the model; governance, evidence classes, assumptions, scenarios, and source results remain explicit.</p><div id="home_status" class="status">No GBL case loaded.</div></section><section class="card" id="business">
+</select></label></div><button id="universe_transition" class="secondary">Apply Lifecycle Transition</button>
+<button id="universe_intake" class="secondary">Start Business Intake</button>
+<div id="universe_intake_out" class="status">Business intake not executed.</div><div id="universe_lifecycle_out" class="status">Lifecycle transition not executed.</div></section><section class="card" id="home"><h2>GBL Home</h2><p class="sub">Global Business Lab execution workspace. TECHA executes the model; governance, evidence classes, assumptions, scenarios, and source results remain explicit.</p><div id="home_status" class="status">No GBL case loaded.</div></section><section class="card" id="business">
 <h2>1. Business Case</h2>
 <div class="fields">
 <label>Case ID<input id="case_id" value="CASE-001"></label>
@@ -71,6 +73,21 @@ async function transitionUniverse(){try{
  status('Lifecycle transition recorded and audited.');
 }catch(e){$('universe_lifecycle_out').textContent='Lifecycle error: '+e.message;}}
 $('universe_save').onclick=saveUniverse;$('universe_load').onclick=loadUniverse;$('universe_transition').onclick=transitionUniverse;
+async function intakeBusiness(){
+  try{
+    const id=encodeURIComponent($('universe_business_id').value.trim());
+    const caseId=prompt('New Business Case ID');
+    if(!caseId) return;
+    const currency=prompt('Base calculation currency','ETB') || 'ETB';
+    const x=await call('/v1/gbl/universe/'+id+'/intake',{method:'POST',body:JSON.stringify({case_id:caseId,base_currency:currency.trim().toUpperCase()})});
+    $('universe_intake_out').innerHTML='<strong>Intake:</strong> '+x.case.case_id+' · lifecycle '+x.business.lifecycle_status;
+    $('universe_out').innerHTML='<strong>Business:</strong> '+x.business.business_id+' · '+x.business.name+' · '+x.business.lifecycle_status+' · case '+x.business.active_case_id;
+    status('Business intake recorded and audited.');
+  }catch(e){
+    $('universe_intake_out').textContent='Intake error: '+e.message;
+  }
+}
+$('universe_intake').onclick=intakeBusiness;
 
 const n=id=>Number($(id).value);
 const status=m=>{$('status').textContent=m};
