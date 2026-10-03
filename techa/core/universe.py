@@ -32,3 +32,23 @@ class BusinessUniverseItem:
                 raise ValueError(f"{label} cannot be empty")
         if self.active_case_id is not None and not self.active_case_id.strip():
             raise ValueError("active_case_id cannot be empty when provided")
+
+
+ALLOWED_LIFECYCLE_TRANSITIONS: dict[BusinessLifecycle, frozenset[BusinessLifecycle]] = {
+    BusinessLifecycle.UNIVERSE: frozenset({BusinessLifecycle.CANDIDATE}),
+    BusinessLifecycle.CANDIDATE: frozenset({BusinessLifecycle.INGESTED}),
+    BusinessLifecycle.INGESTED: frozenset({BusinessLifecycle.GOVERNANCE_HOLD, BusinessLifecycle.SIMULATION_READY}),
+    BusinessLifecycle.GOVERNANCE_HOLD: frozenset({BusinessLifecycle.SIMULATION_READY, BusinessLifecycle.NOT_CLEARED}),
+    BusinessLifecycle.SIMULATION_READY: frozenset({BusinessLifecycle.SIMULATED, BusinessLifecycle.GOVERNANCE_HOLD}),
+    BusinessLifecycle.SIMULATED: frozenset({BusinessLifecycle.REVIEW, BusinessLifecycle.GOVERNANCE_HOLD}),
+    BusinessLifecycle.REVIEW: frozenset({BusinessLifecycle.CLEARED, BusinessLifecycle.NOT_CLEARED, BusinessLifecycle.GOVERNANCE_HOLD}),
+    BusinessLifecycle.CLEARED: frozenset(),
+    BusinessLifecycle.NOT_CLEARED: frozenset({BusinessLifecycle.REVIEW, BusinessLifecycle.CANDIDATE}),
+}
+
+
+def validate_lifecycle_transition(current: BusinessLifecycle, target: BusinessLifecycle) -> None:
+    if current == target:
+        return
+    if target not in ALLOWED_LIFECYCLE_TRANSITIONS[current]:
+        raise ValueError(f"Invalid lifecycle transition: {current.value} -> {target.value}")
