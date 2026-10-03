@@ -1,0 +1,8 @@
+services:
+  techa:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      TECHA_ENV: production
+      TECHA_DEFAULT_BASE_CURRENCY: ETB
