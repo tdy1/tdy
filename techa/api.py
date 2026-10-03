@@ -213,7 +213,22 @@ def update_assumption_evidence(case_id: str, key: str, req: EvidenceUpdateReques
     assumptions[key] = updated
     updated_case = BusinessCase(case.case_id, case.name, case.base_currency, assumptions)
     _store.save_business_case(updated_case)
-    return jsonable(updated_case)
+    audit = AuditRecord.create(
+        event="evidence.reclassified",
+        case_id=case.case_id,
+        engine_version="0.1.0",
+        inputs={
+            "assumption_key": key,
+            "old_evidence_class": assumption.evidence_class.value,
+            "old_source": assumption.source,
+        },
+        outputs={
+            "new_evidence_class": updated.evidence_class.value,
+            "new_source": updated.source,
+        },
+    )
+    _store.save_audit_record(audit)
+    return jsonable({"business_case": updated_case, "audit_digest": audit.digest()})
 
 
 @app.get("/v1/business-cases/{case_id}/evidence")
