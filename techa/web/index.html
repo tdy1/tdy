@@ -19,7 +19,10 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 <option>UNIVERSE</option><option>CANDIDATE</option><option>INGESTED</option><option>GOVERNANCE_HOLD</option><option>SIMULATION_READY</option><option>SIMULATED</option><option>REVIEW</option><option>CLEARED</option><option>NOT_CLEARED</option>
 </select></label></div><button id="universe_transition" class="secondary">Apply Lifecycle Transition</button>
 <div class="fields" style="margin-top:12px"><label>New Case ID<input id="universe_case_id" value="548-case-v1"></label><label>Base calculation currency<select id="universe_base_currency"><option>ETB</option><option>USD</option><option>EUR</option><option>KES</option><option>TZS</option><option>UGX</option></select></label></div><button id="universe_intake" class="secondary">Start Business Intake</button>
-<div id="universe_intake_out" class="status">Business intake not executed.</div><div id="universe_lifecycle_out" class="status">Lifecycle transition not executed.</div></section><section class="card" id="home"><h2>GBL Home</h2><p class="sub">Global Business Lab execution workspace. TECHA executes the model; governance, evidence classes, assumptions, scenarios, and source results remain explicit.</p><div id="home_status" class="status">No GBL case loaded.</div></section><section class="card" id="business">
+<div id="universe_intake_out" class="status">Business intake not executed.</div><div id="universe_lifecycle_out" class="status">Lifecycle transition not executed.</div></section><section class="card" id="home"><h2>GBL Home</h2><p class="sub">Global Business Lab execution workspace. TECHA executes the model; governance, evidence classes, assumptions, scenarios, and source results remain explicit.</p><div class="fields" style="margin-top:12px"><label>Case summary ID<input id="summary_case_id" value="548"></label></div>
+<button id="load_summary" class="secondary">Load Case Summary</button>
+<div id="case_summary_out" class="status">Case summary not loaded.</div>
+<div id="home_status" class="status">No GBL case loaded.</div></section><section class="card" id="business">
 <h2>1. Business Case</h2>
 <div class="fields">
 <label>Case ID<input id="case_id" value="CASE-001"></label>
@@ -88,6 +91,17 @@ async function intakeBusiness(){
   }
 }
 $('universe_intake').onclick=intakeBusiness;
+$('load_summary').onclick=async()=>{try{
+ const id=encodeURIComponent($('summary_case_id').value.trim());
+ const body=await call('/v1/gbl/cases/'+id+'/summary');
+ const g=body.governance||{}, e=body.execution_readiness||{}, c=body.counts||{}, cur=body.currency||{};
+ $('case_summary_out').innerHTML='<strong>'+body.business.business_id+' · '+body.business.name+'</strong> · lifecycle '+(body.business.lifecycle_status||'INGESTED')+
+ '<br>Governance: '+(g.state||'—')+' · Human Gate: '+(g.human_gate||'—')+' · frozen through: '+(g.steps_frozen_through??'—')+
+ '<br>Execution readiness: <b>'+e.status+'</b> · investment clearance: '+(e.investment_clearance?'CLEARED':'NOT CLEARED')+
+ '<br>Assumptions: '+c.assumptions+' · blockers: '+c.blocking_evidence+' · scenarios: '+c.scenarios+' · source results: '+c.source_results+
+ '<br>Currency: '+(cur.base_currency||'—')+' calculation · '+(cur.presentation_currency||'—')+' presentation';
+ status('Case summary loaded.');
+}catch(e){$('case_summary_out').textContent='Summary error: '+e.message;}};
 
 const n=id=>Number($(id).value);
 const status=m=>{$('status').textContent=m};
