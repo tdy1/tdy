@@ -366,6 +366,10 @@ def test_workspace_browser_surface_exposes_gbl_controls():
         "GBL contract exported",
         "Evidence & Governance",
         "Presentation currency",
+        'id="readiness_out"',
+        'Execution readiness',
+        'results_reconciliation_out',
+        'authoritative GBL results preserved',
     ]
     for marker in required_controls:
         assert marker in html
