@@ -118,3 +118,36 @@ def test_workspace_evidence_reclassification_can_make_case_blocked():
     blocked = next(item for item in body["items"] if item["key"] == "units_sold")
     assert blocked["blocking"] is True
     assert blocked["evidence_class"] == "REQUIRES_PRIMARY_VERIFICATION"
+
+
+def test_workspace_simulation_supports_presentation_currency_and_audit():
+    case_id = "WORKSPACE-API-005"
+    created = client.post("/v1/business-cases", json=_case(case_id))
+    assert created.status_code == 200
+    fx = client.post("/v1/fx-rates", json={
+        "from_currency": "ETB", "to_currency": "USD", "rate": "0.006",
+        "as_of": "2026-10-05", "source": "workspace-test",
+    })
+    assert fx.status_code == 200
+
+    simulated = client.post(
+        f"/v1/business-cases/{case_id}/simulate",
+        json={
+            "scenario_id": "BASE",
+            "scenario_name": "Base Case",
+            "overrides": {},
+            "presentation_currency": "USD",
+            "fx_as_of": "2026-10-05",
+        },
+    )
+    assert simulated.status_code == 200
+    body = simulated.json()
+    assert body["financial"]["net_profit"] == "280.00"
+    assert body["presentation"]["net_profit"] == "1.68000"
+    assert body["fx_direction"] == "direct"
+    assert body["fx"]["source"] == "workspace-test"
+    assert body["presentation_audit_digest"]
+
+    audit = client.get(f"/v1/business-cases/{case_id}/audit")
+    assert audit.status_code == 200
+    assert any(r["event"] == "currency.present" for r in audit.json()["records"])
