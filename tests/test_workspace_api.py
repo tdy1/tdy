@@ -289,3 +289,21 @@ def test_gbl_source_result_reconciliation_rejects_duplicate_ids():
     imported = client.post("/v1/gbl/import", json=data)
     assert imported.status_code == 422
     assert "Duplicate source result ID" in imported.json()["detail"]
+
+
+def test_workspace_browser_surface_exposes_gbl_controls():
+    from pathlib import Path
+
+    html = (Path(__file__).parents[1] / "techa" / "web" / "index.html").read_text(encoding="utf-8")
+    required_controls = [
+        'id="import_gbl"',
+        'id="export_gbl"',
+        "/v1/gbl/cases/",
+        "/export",
+        "GBL contract loaded",
+        "GBL contract exported",
+        "Evidence & Governance",
+        "Presentation currency",
+    ]
+    for marker in required_controls:
+        assert marker in html
