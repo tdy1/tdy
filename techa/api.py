@@ -159,6 +159,11 @@ def calculate(req: FinancialRequest):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+class EvidenceUpdateRequest(BaseModel):
+    evidence_class: EvidenceClass
+    source: str | None = None
+
+
 @app.post("/v1/business-cases")
 def create_business_case(req: BusinessCaseRequest):
     assumptions = {}
@@ -186,6 +191,29 @@ def get_business_case(case_id: str):
     if case is None:
         raise HTTPException(status_code=404, detail="Business case not found")
     return jsonable(case)
+
+
+@app.patch("/v1/business-cases/{case_id}/assumptions/{key}/evidence")
+def update_assumption_evidence(case_id: str, key: str, req: EvidenceUpdateRequest):
+    case = _store.get_business_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    assumption = case.assumptions.get(key)
+    if assumption is None:
+        raise HTTPException(status_code=404, detail="Assumption not found")
+    updated = Assumption(
+        key=assumption.key,
+        value=assumption.value,
+        unit=assumption.unit,
+        evidence_class=req.evidence_class,
+        source=req.source,
+        editable=assumption.editable,
+    )
+    assumptions = dict(case.assumptions)
+    assumptions[key] = updated
+    updated_case = BusinessCase(case.case_id, case.name, case.base_currency, assumptions)
+    _store.save_business_case(updated_case)
+    return jsonable(updated_case)
 
 
 @app.get("/v1/business-cases/{case_id}/evidence")
