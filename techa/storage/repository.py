@@ -162,6 +162,30 @@ class SQLiteStore:
             for row in rows
         ]
 
+    def verify_audit_integrity(self, case_id: str, limit: int = 100) -> dict[str, object]:
+        records = self.get_audit_records(case_id, limit)
+        verified = []
+        for record in records:
+            payload = json.loads(record["payload_json"])
+            reconstructed = AuditRecord(
+                event=record["event"],
+                case_id=record["case_id"],
+                engine_version=record["engine_version"],
+                inputs=payload.get("inputs", {}),
+                outputs=payload.get("outputs", {}),
+                recorded_at=record["recorded_at"],
+            )
+            verified.append({
+                "digest": record["digest"],
+                "valid": reconstructed.digest() == record["digest"],
+            })
+        return {
+            "case_id": case_id,
+            "records_checked": len(verified),
+            "all_valid": all(item["valid"] for item in verified),
+            "records": verified,
+        }
+
     def close(self) -> None:
         with self._lock:
             self.db.close()
