@@ -73,6 +73,12 @@ def test_gbl_business_universe_lifecycle_api():
     assert created.status_code == 200
     assert created.json()["lifecycle_status"] == "UNIVERSE"
 
+    candidate = client.patch("/v1/gbl/universe/548/lifecycle", json={
+        "lifecycle_status": "CANDIDATE"
+    })
+    assert candidate.status_code == 200
+    assert candidate.json()["lifecycle_status"] == "CANDIDATE"
+
     changed = client.patch("/v1/gbl/universe/548/lifecycle", json={
         "lifecycle_status": "INGESTED"
     })
