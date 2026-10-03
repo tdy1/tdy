@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>TECHA Engine</title></head>
+<body><main><h1>TECHA</h1><p>SIMULATE BEFORE YOU CAPITALIZE.</p>
+<form id="f">
+<label>Units <input name="units_sold" value="100"></label>
+<label>Price <input name="selling_price" value="50"></label>
+<label>Direct COGS <input name="direct_cogs" value="3000"></label>
+<label>Reserve rate <input name="reserve_rate" value="0.20"></label>
+<label>Operating expenses <input name="operating_expenses" value="1000"></label>
+<label>Tax rate <input name="tax_rate" value="0.30"></label>
+<button>Calculate</button></form><pre id="out"></pre>
+<script>
+f.onsubmit=async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(f));const r=await fetch('/v1/financial/calculate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(o)});out.textContent=JSON.stringify(await r.json(),null,2)}
+</script></main></body></html>
