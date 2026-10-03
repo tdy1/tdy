@@ -1,0 +1,1 @@
+"""Core TECHA domain models."""
