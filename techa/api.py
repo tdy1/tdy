@@ -8,13 +8,16 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from techa.core.models import Assumption, BusinessCase, Currency, EvidenceClass
+from techa.core.scenario import Scenario
 from techa.core.serialization import jsonable
+from techa.core.simulation import SimulationService
 from techa.financial.engine import FinancialEngine, FinancialInputs
 from techa.storage.repository import SQLiteStore
 
 app = FastAPI(title="TECHA Engine", version="0.1.0")
 _store = SQLiteStore(Path("techa.db"))
 _store.initialize(Path(__file__).parent / "storage" / "schema.sql")
+_simulation = SimulationService(_store)
 
 
 class FinancialRequest(BaseModel):
@@ -41,6 +44,12 @@ class BusinessCaseRequest(BaseModel):
     base_currency: str = Field(min_length=3, max_length=3)
     currency_name: str = "Currency"
     assumptions: list[AssumptionRequest] = Field(default_factory=list)
+
+
+class SimulationRequest(BaseModel):
+    scenario_id: str | None = Field(default=None, min_length=1)
+    scenario_name: str = "Scenario"
+    overrides: dict[str, Decimal] = Field(default_factory=dict)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -89,3 +98,33 @@ def get_business_case(case_id: str):
     if case is None:
         raise HTTPException(status_code=404, detail="Business case not found")
     return jsonable(case)
+
+
+@app.post("/v1/business-cases/{case_id}/simulate")
+def simulate_business_case(case_id: str, req: SimulationRequest):
+    case = _store.get_business_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    missing = [
+        key for key in SimulationService.REQUIRED_FINANCIAL_KEYS
+        if key not in case.assumptions
+    ]
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Business case is missing financial assumptions", "missing": missing},
+        )
+    scenario = None
+    if req.scenario_id:
+        scenario = Scenario(req.scenario_id, req.scenario_name, req.overrides)
+    try:
+        result = _simulation.execute(case, scenario)
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return jsonable({
+        "case_id": result.case_id,
+        "scenario_id": result.scenario_id,
+        "financial": result.financial,
+        "audit": result.audit,
+        "audit_digest": result.audit.digest(),
+    })
