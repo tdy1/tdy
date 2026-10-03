@@ -274,7 +274,7 @@ def get_business_case_audit(case_id: str, limit: int = 100):
         return {"case_id": case_id, "records": _store.get_audit_records(case_id, limit)}
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-
+\n@app.get("/v1/business-cases/{case_id}/audit/integrity")\ndef verify_business_case_audit_integrity(case_id: str, limit: int = 100):\n    if _store.get_business_case(case_id) is None:\n        raise HTTPException(status_code=404, detail="Business case not found")\n    try:\n        return _store.verify_audit_integrity(case_id, limit)\n    except (ValueError, json.JSONDecodeError) as exc:\n        raise HTTPException(status_code=422, detail=str(exc)) from exc\n
 
 @app.post("/v1/business-cases/{case_id}/sensitivity")
 def run_sensitivity(case_id: str, req: SensitivityRequest):
