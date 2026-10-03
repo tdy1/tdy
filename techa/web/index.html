@@ -22,6 +22,8 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 <div id="universe_intake_out" class="status">Business intake not executed.</div><div id="universe_lifecycle_out" class="status">Lifecycle transition not executed.</div></section><section class="card" id="home"><h2>GBL Home</h2><p class="sub">Global Business Lab execution workspace. TECHA executes the model; governance, evidence classes, assumptions, scenarios, and source results remain explicit.</p><div class="fields" style="margin-top:12px"><label>Case summary ID<input id="summary_case_id" value="548"></label></div>
 <button id="load_summary" class="secondary">Load Case Summary</button>
 <div id="case_summary_out" class="status">Case summary not loaded.</div>
+<button id="load_cases" class="secondary">Load Active Cases</button>
+<div id="recent_cases_out" class="status">Active cases not loaded.</div>
 <div id="home_status" class="status">No GBL case loaded.</div></section><section class="card" id="business">
 <h2>1. Business Case</h2>
 <div class="fields">
@@ -91,6 +93,12 @@ async function intakeBusiness(){
   }
 }
 $('universe_intake').onclick=intakeBusiness;
+$('load_cases').onclick=async()=>{try{
+ const body=await call('/v1/gbl/cases');
+ const rows=(body.cases||[]).map(x=>'<div><strong>'+x.business_id+' · '+x.name+'</strong> · case '+x.case_id+' · '+x.lifecycle_status+' · <button class="secondary" onclick="document.getElementById(\'summary_case_id\').value=\''+x.case_id+'\';document.getElementById(\'load_summary\').click()">Open Summary</button></div>');
+ $('recent_cases_out').innerHTML=rows.join('')||'No active cases.';
+ status('Active cases loaded.');
+}catch(e){$('recent_cases_out').textContent='Cases error: '+e.message;}};
 $('load_summary').onclick=async()=>{try{
  const id=encodeURIComponent($('summary_case_id').value.trim());
  const body=await call('/v1/gbl/cases/'+id+'/summary');
