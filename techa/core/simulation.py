@@ -38,10 +38,9 @@ class SimulationService:
         scenario: Scenario | None = None,
         evidence: EvidenceRegistry | None = None,
     ) -> SimulationResult:
-        if evidence is not None:
-            for item in evidence.all():
-                if item.requires_primary_verification:
-                    continue
+        if evidence is not None and not evidence.can_execute():
+            blocking = [item.evidence_id for item in evidence.blocking_items()]
+            raise ValueError(f"Simulation blocked by evidence requiring verification: {blocking}")
 
         values = {key: case.assumption(key).value for key in self.REQUIRED_FINANCIAL_KEYS}
         scenario_id = "BASE" if scenario is None else scenario.scenario_id
