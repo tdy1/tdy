@@ -1,0 +1,117 @@
+# TECHA → GBL Production Integration Plan v1
+
+## Purpose
+
+Turn the existing TECHA Engine + GBL contract integration into the execution platform for Global Business Lab (GBL).
+
+GBL remains the governing methodology and source of business definitions, evidence, scenarios, governance states, and authoritative source results. TECHA provides execution, persistence, financial calculation, sensitivity analysis, currency presentation, auditability, and the application workspace.
+
+## Non-negotiable boundaries
+
+1. GBL methodology is not replaced by TECHA.
+2. TECHA financial logic remains generic; Business #548 is never hard-coded into the engine.
+3. Imported GBL source results remain source results; TECHA does not silently recalculate or overwrite them.
+4. Evidence classes are preserved exactly. Import never promotes evidence.
+5. Blocking evidence remains blocking until explicitly reclassified through an audited action.
+6. Calculation currency is authoritative; presentation currency is a separate dated-FX layer.
+7. Conclusions are reporting outputs, not hidden financial inputs.
+8. No universal feasibility/compliance score is introduced.
+9. Primary verification requirements remain visible even when a State 0 simulation is executable.
+10. Existing completed engine behavior is regression-protected.
+
+## Production operating model
+
+### A. Business Universe
+GBL supplies canonical business identity and classification. TECHA stores and operates on an individual governed Business Case.
+
+Minimum identity: business_id, business name, sector, geography, governance state, human gate, steps frozen through.
+
+### B. Business Intake
+A business enters TECHA through GBL Case Contract v1.
+
+Intake validates contract, identity, evidence classes, governance, scenarios, currency, and source-result reconciliation.
+
+Intake does not promote evidence, change governance, recalculate authoritative source results, infer missing FX, or replace source-result identity.
+
+### C. Governance Workspace
+Governance is visible before simulation: State, Human Gate, frozen-through step, blockers, evidence counts, executable status, and source-result status.
+
+### D. Scenario Workspace
+GBL scenarios become first-class executable configurations. Initial model: S1, S2, S3, explicit overrides, scenario-level execution audit. The generic engine remains unaware of #548-specific meanings.
+
+### E. Evidence Workspace
+Each assumption exposes value, unit, evidence class, source, editable flag, blocking status, and executable status. Reclassification requires an explicit audited action.
+
+### F. Simulation Workspace
+Execution sequence:
+Business Case → Governance check → Evidence gate → Scenario selection → Financial engine → Presentation currency → Audit record → Result.
+
+### G. Results Workspace
+Results distinguish TECHA-calculated simulation results, imported GBL source results, analytical interpretation, and unresolved verification requirements. These must not be visually conflated.
+
+### H. Audit / Integrity
+Material state-changing operations receive audit records. Minimum events: gbl.case_imported, gbl.case_exported, simulation.executed, sensitivity.executed, evidence.reclassified, currency.presented.
+
+## Production UI information architecture
+
+The current five-step TECHA workspace becomes the execution surface inside a broader GBL shell:
+
+1. **GBL Home** — Business Universe, Recent Cases, Governance status.
+2. **Business Case** — Identity, Governance, Scenarios, Source Results.
+3. **Evidence & Assumptions** — Assumptions, evidence classes, blocking items, verification requirements.
+4. **Simulation** — Scenario, financial inputs, calculation currency, presentation currency, FX date.
+5. **Results** — Key metrics, scenario result, sensitivity, source-result reconciliation.
+6. **Audit** — Event history, digests, execution lineage.
+
+## First production acceptance case
+
+Business #548 is the first integration case because its GBL contract already exists.
+
+Acceptance must prove:
+- identity preserved
+- State 0 / Human Gate 1 HOLD preserved
+- Steps 1–55 frozen-through preserved
+- S1/S2/S3 scenarios preserved
+- evidence classifications preserved
+- source-result identity preserved
+- source results are not overwritten
+- TECHA executes according to the evidence gate
+- presentation currency remains independent from calculation currency
+- audit lineage is generated
+
+The #548 case is an integration fixture/use case, not engine-specific logic.
+
+## Versioning boundary
+
+The existing 0.1.0 engine baseline remains the stable foundation. Production integration is a separately documented phase. No release/tag claim is made until corresponding formal GitHub release metadata exists.
+
+## Implementation sequence
+
+### P1 — Production contract/service layer
+- governed case summary
+- scenario listing
+- evidence status
+- source-result reconciliation
+- explicit execution readiness
+
+### P2 — Production workspace UI
+- GBL shell
+- case navigation
+- governance-first presentation
+- scenario/evidence/results views
+
+### P3 — #548 acceptance
+- import
+- inspect
+- execute permitted cases
+- reconcile source results
+- audit
+
+### P4 — Hardening
+- API tests
+- UI regression tests
+- Docker verification
+- documentation
+- release readiness
+
+**Current status:** P0 foundation complete. P1 is the next implementation boundary.
