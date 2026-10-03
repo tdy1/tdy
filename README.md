@@ -14,6 +14,10 @@ TECHA is the engineering backbone for the Global Business Lab simulation system.
 - Audit records describe what was calculated, with which assumptions, and when.
 - No secrets, credentials, or private evidence belong in source control.
 
+## Release status
+
+**TECHA v0.1.0 — ENGINEERING FROZEN.** The executable baseline is verified by automated regression tests and Docker build/smoke verification. The formal GitHub tag/release object is not claimed as published because the connected GitHub interface does not expose tag/release creation.
+
 ## Repository status
 
 The repository contains the TECHA engine foundation and the first Business Simulation Workspace. Existing project decisions and completed work are treated as requirements; the repository does not intentionally repeat previously completed analytical work.
