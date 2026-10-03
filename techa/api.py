@@ -251,6 +251,7 @@ def get_business_case_evidence(case_id: str):
             "source": assumption.source,
             "editable": assumption.editable,
             "requires_primary_verification": blocking,
+            "blocking": blocking,
             "executable": not blocking,
         })
     return {
