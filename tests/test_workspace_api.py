@@ -249,3 +249,43 @@ def test_gbl_import_api_rejects_invalid_contract():
     imported = client.post("/v1/gbl/import", json=data)
     assert imported.status_code == 422
     assert "Invalid evidence class" in imported.json()["detail"]
+
+
+
+def test_gbl_548_complete_integration_preserves_scenario_governance_and_source_result():
+    data = _gbl_payload("548-COMPLETE")
+    data["business"]["sector"] = "Agriculture & Agribusiness"
+    data["business"]["geography"] = "Ethiopia, Addis Ababa / Modjo Regional Corridor"
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+
+    metadata = client.get("/v1/gbl/cases/548-COMPLETE")
+    assert metadata.status_code == 200
+    body = metadata.json()
+    assert body["business_metadata"]["sector"] == data["business"]["sector"]
+    assert body["business_metadata"]["geography"] == data["business"]["geography"]
+    assert body["governance"] == data["governance"]
+    assert body["scenarios"] == data["scenarios"]
+    assert body["source_results"] == data["source_results"]
+
+    exported = client.get("/v1/gbl/cases/548-COMPLETE/export")
+    assert exported.status_code == 200
+    contract = exported.json()["contract"]
+    assert contract["business"] == data["business"]
+    assert contract["governance"] == data["governance"]
+    assert contract["scenarios"] == data["scenarios"]
+    assert contract["source_results"] == data["source_results"]
+    assert exported.json()["audit_digest"]
+
+    audit = client.get("/v1/business-cases/548-COMPLETE/audit")
+    events = [record["event"] for record in audit.json()["records"]]
+    assert "gbl.case_imported" in events
+    assert "gbl.case_exported" in events
+
+
+def test_gbl_source_result_reconciliation_rejects_duplicate_ids():
+    data = _gbl_payload("548-RECON")
+    data["source_results"].append(dict(data["source_results"][0]))
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 422
+    assert "Duplicate source result ID" in imported.json()["detail"]
