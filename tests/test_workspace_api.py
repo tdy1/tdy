@@ -285,6 +285,20 @@ def test_gbl_548_complete_integration_preserves_scenario_governance_and_source_r
     assert "gbl.case_exported" in events
 
 
+def test_audit_integrity_endpoint_verifies_persisted_digests():
+    client = TestClient(app)
+    data = _gbl_payload("548-AUDIT-INTEGRITY")
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+
+    response = client.get("/v1/business-cases/548-AUDIT-INTEGRITY/audit/integrity")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["records_checked"] >= 1
+    assert body["all_valid"] is True
+    assert all(item["valid"] is True for item in body["records"])
+
+
 def test_gbl_production_case_summary_exposes_governance_and_execution_readiness():
     data = _gbl_payload("548-SUMMARY")
     imported = client.post("/v1/gbl/import", json=data)
