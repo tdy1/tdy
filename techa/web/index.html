@@ -29,7 +29,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;
 <div class="fields">
 <label>Case ID<input id="case_id" value="CASE-001"></label>
 <label>Business name<input id="name" value="Example Business"></label>
-<label>Base currency<select id="currency"><option>ETB</option><option>USD</option><option>EUR</option><option>KES</option><option>TZS</option><option>UGX</option></select></label>
+<label>Base currency<select id="currency"><option>ETB</option><option>USD</option><option>EUR</option><option>KES</option><option>TZS</option><option>UGX</option></select></label><label>Presentation currency<select id="presentation_currency"><option>ETB</option><option>USD</option><option>EUR</option><option>KES</option><option>TZS</option><option>UGX</option></select></label><label>FX as-of date<input id="fx_as_of" type="date"></label>
 <label>Scenario name<input id="scenario_name" value="Base Case"></label>
 </div>
 <div class="status">Inputs created here are stored as explicit model assumptions. They are not promoted to verified facts.</div>
@@ -49,10 +49,10 @@ pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;
 <section class="card">
 <h2>3. Run Simulation</h2><p>Run stored assumptions through the deterministic financial engine. Scenario overrides are optional.</p>
 <div class="fields">
-<label>Override selling price<input id="override_price" type="number" step="any" placeholder="optional"></label>
+<label>FX rate source<input id="fx_source" placeholder="required only when saving an FX rate"></label><label>FX rate<input id="fx_rate" type="number" step="any" placeholder="base → presentation"></label><label>Override selling price<input id="override_price" type="number" step="any" placeholder="optional"></label>
 <label>Override units sold<input id="override_units" type="number" step="any" placeholder="optional"></label>
 </div>
-<button id="simulate">Run Base / Scenario Simulation</button>
+<button id="save_fx" class="secondary">Save FX Rate</button><button id="simulate">Run Base / Scenario Simulation</button>
 <button id="load" class="secondary">Reload Case</button>
 <div id="status" class="status">Ready.</div>
 </section>
@@ -97,7 +97,7 @@ async function call(url,opts={}){const r=await fetch(url,{headers:{'content-type
 const body=await r.json();if(!r.ok)throw new Error(typeof body.detail==='string'?body.detail:JSON.stringify(body.detail));return body;}
 $('create').onclick=async()=>{try{const body=await call('/v1/business-cases',{method:'POST',body:JSON.stringify({
 case_id:$('case_id').value.trim(),name:$('name').value.trim(),base_currency:$('currency').value,assumptions:assumptions()})});
-status('Business case saved: '+body.case_id);$('out').textContent=JSON.stringify(body,null,2);}catch(e){status('Error: '+e.message);}};
+status('Business case saved: '+body.case_id);$('presentation_currency').value=body.base_currency.code;$('out').textContent=JSON.stringify(body,null,2);}catch(e){status('Error: '+e.message);}};
 $('load').onclick=async()=>{try{const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim()));
 $('name').value=body.name;$('currency').value=body.base_currency.code;
 for(const [k,a] of Object.entries(body.assumptions||{}))if($(k))$(k).value=a.value;
@@ -106,11 +106,17 @@ $('evidence').onclick=async()=>{try{
  const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/evidence');
  renderEvidence(body);
 }catch(e){$('evidence_out').textContent='Error: '+e.message;}};
+$('save_fx').onclick=async()=>{try{
+ const from=$('currency').value,to=$('presentation_currency').value;
+ if(from===to){status('Base and presentation currencies are the same; no FX rate is required.');return;}
+ const body=await call('/v1/fx-rates',{method:'POST',body:JSON.stringify({from_currency:from,to_currency:to,rate:n('fx_rate'),as_of:$('fx_as_of').value,source:$('fx_source').value.trim()})});
+ status('FX rate saved: '+body.from_currency.code+' → '+body.to_currency.code+' @ '+body.as_of);
+}catch(e){status('FX error: '+e.message);}};
 $('simulate').onclick=async()=>{try{const overrides={};
 if($('override_price').value!=='')overrides.selling_price=n('override_price');
 if($('override_units').value!=='')overrides.units_sold=n('override_units');
 const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/simulate',{method:'POST',
-body:JSON.stringify({scenario_id:Object.keys(overrides).length?'SCENARIO':'BASE',scenario_name:$('scenario_name').value,overrides})});
+body:JSON.stringify({scenario_id:Object.keys(overrides).length?'SCENARIO':'BASE',scenario_name:$('scenario_name').value,overrides,presentation_currency:$('presentation_currency').value,fx_as_of:$('fx_as_of').value||null})});
 const f=body.financial;
 $('metrics').innerHTML=['Revenue','Total COGS + Reserve','Operating Profit','Tax','Net Profit'].map((label,i)=>{
 const key=['revenue','total_cogs_and_reserve','operating_profit','tax','net_profit'][i];
