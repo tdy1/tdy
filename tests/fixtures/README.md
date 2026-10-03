@@ -1,0 +1,1 @@
+Regression fixtures are immutable reference cases. Add a fixture only when its source result is authoritative and traceable. Do not regenerate or overwrite a fixture merely because implementation code changes.
