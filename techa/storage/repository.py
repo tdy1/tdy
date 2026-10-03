@@ -92,7 +92,7 @@ class SQLiteStore:
                 "(digest,event,case_id,engine_version,recorded_at,payload_json) "
                 "VALUES(?,?,?,?,?,?)",
                 (record.digest(), record.event, record.case_id,
-                 record.engine_version, record.timestamp, payload),
+                 record.engine_version, record.recorded_at, payload),
             )
             self.db.commit()
 
