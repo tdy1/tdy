@@ -1,4 +1,4 @@
-from techa.core.universe import BusinessLifecycle, BusinessUniverseItem
+from techa.core.universe import BusinessLifecycle, BusinessUniverseItem, validate_lifecycle_transition
 from techa.storage.repository import SQLiteStore
 
 
@@ -28,3 +28,10 @@ def test_universe_lifecycle_and_case_link(tmp_path):
     store.save_universe_item(updated)
     assert store.get_universe_item("548") == updated
     store.close()
+
+
+def test_lifecycle_transition_rules():
+    item = BusinessUniverseItem("548", "Dehydrated Vegetable Production", "Agriculture", "Ethiopia")
+    validate_lifecycle_transition(item.lifecycle_status, BusinessLifecycle.CANDIDATE)
+    with pytest.raises(ValueError, match="Invalid lifecycle transition"):
+        validate_lifecycle_transition(BusinessLifecycle.UNIVERSE, BusinessLifecycle.CLEARED)
