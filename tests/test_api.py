@@ -60,3 +60,30 @@ def test_financial_endpoint_requires_exact_fx_rate_for_presentation():
         "base_currency": "ETB", "presentation_currency": "USD", "fx_as_of": "2099-01-01"
     })
     assert r.status_code == 422
+
+
+def test_gbl_business_universe_lifecycle_api():
+    payload = {
+        "business_id": "548",
+        "name": "Dehydrated Vegetable Production",
+        "sector": "Agriculture & Agribusiness",
+        "geography": "Ethiopia",
+    }
+    created = client.post("/v1/gbl/universe", json=payload)
+    assert created.status_code == 200
+    assert created.json()["lifecycle_status"] == "UNIVERSE"
+
+    changed = client.patch("/v1/gbl/universe/548/lifecycle", json={
+        "lifecycle_status": "INGESTED"
+    })
+    assert changed.status_code == 200
+    assert changed.json()["lifecycle_status"] == "INGESTED"
+
+    listed = client.get("/v1/gbl/universe?lifecycle_status=INGESTED")
+    assert listed.status_code == 200
+    assert listed.json()["count"] >= 1
+    assert any(item["business_id"] == "548" for item in listed.json()["items"])
+
+    fetched = client.get("/v1/gbl/universe/548")
+    assert fetched.status_code == 200
+    assert fetched.json()["active_case_id"] is None
