@@ -33,3 +33,27 @@ def test_simulate_business_case_endpoint():
     assert r.status_code == 200
     assert r.json()["financial"]["net_profit"] == "-600.00"
     assert r.json()["audit_digest"]
+
+
+def test_sensitivity_and_audit_endpoints():
+    r = client.post("/v1/business-cases", json={
+        "case_id": "API-SENS-001", "name": "API Sensitivity", "base_currency": "ETB",
+        "assumptions": [
+            {"key": "units_sold", "value": "100", "unit": "units", "evidence_class": "MARKET_ASSUMPTION"},
+            {"key": "selling_price", "value": "50", "unit": "ETB/unit", "evidence_class": "MARKET_ASSUMPTION"},
+            {"key": "direct_cogs", "value": "3000", "unit": "ETB", "evidence_class": "COST_ENGINEERING_ESTIMATE"},
+            {"key": "reserve_rate", "value": "0.20", "unit": "ratio", "evidence_class": "MARKET_ASSUMPTION"},
+            {"key": "operating_expenses", "value": "1000", "unit": "ETB", "evidence_class": "COST_ENGINEERING_ESTIMATE"},
+            {"key": "tax_rate", "value": "0.30", "unit": "ratio", "evidence_class": "VERIFIED_FACT"},
+        ],
+    })
+    assert r.status_code == 200
+    r = client.post("/v1/business-cases/API-SENS-001/sensitivity", json={
+        "variable": "selling_price", "values": ["40", "50", "60"]
+    })
+    assert r.status_code == 200
+    assert [p["financial"]["net_profit"] for p in r.json()["points"]] == ["-600.00", "280.00", "1160.00"]
+    assert r.json()["audit_digest"]
+    r = client.get("/v1/business-cases/API-SENS-001/audit")
+    assert r.status_code == 200
+    assert len(r.json()["records"]) == 4
