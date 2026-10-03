@@ -320,6 +320,29 @@ def test_gbl_production_case_summary_becomes_executable_after_explicit_reclassif
 
 
 
+def test_gbl_production_services_expose_scenarios_evidence_and_source_results():
+    data = _gbl_payload("548-P1-SERVICES")
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+
+    scenarios = client.get("/v1/gbl/cases/548-P1-SERVICES/scenarios")
+    assert scenarios.status_code == 200
+    assert scenarios.json()["scenarios"] == data["scenarios"]
+
+    evidence = client.get("/v1/gbl/cases/548-P1-SERVICES/evidence")
+    assert evidence.status_code == 200
+    evidence_body = evidence.json()
+    assert "selling_price" in evidence_body["blocking_items"]
+    assert evidence_body["can_execute"] is False
+
+    source_results = client.get("/v1/gbl/cases/548-P1-SERVICES/source-results")
+    assert source_results.status_code == 200
+    source_body = source_results.json()
+    assert source_body["source_results"] == data["source_results"]
+    assert source_body["reconciliation"]["authoritative_results_preserved"] is True
+
+
+
 def test_gbl_source_result_reconciliation_rejects_duplicate_ids():
     data = _gbl_payload("548-RECON")
     data["source_results"].append(dict(data["source_results"][0]))
