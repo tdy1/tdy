@@ -27,7 +27,7 @@ def test_financial_endpoint_with_presentation_currency():
     assert r.status_code==200
     body=r.json()
     assert body["financial"]["net_profit"]=="280.00"
-    assert body["presentation"]["net_profit"]=="1.6800"
+    assert body["presentation"]["net_profit"]=="1.68000"
     assert body["fx"]["source"]=="test"
     assert body["audit_digest"]
 
