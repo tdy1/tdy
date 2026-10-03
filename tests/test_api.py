@@ -181,3 +181,19 @@ def test_gbl_business_intake_rejects_duplicate_case():
         "base_currency": "ETB",
     })
     assert second.status_code == 409
+
+
+def test_gbl_case_summary_preserves_governance_readiness_and_counts():
+    data = _gbl_payload("548-SUMMARY")
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+    summary = client.get("/v1/gbl/cases/548-SUMMARY/summary")
+    assert summary.status_code == 200
+    body = summary.json()
+    assert body["business"] == data["business"]
+    assert body["governance"] == data["governance"]
+    assert body["currency"]["base_currency"] == "ETB"
+    assert body["counts"]["scenarios"] == len(data["scenarios"])
+    assert body["counts"]["source_results"] == len(data["source_results"])
+    assert body["execution_readiness"]["status"] == "BLOCKED"
+    assert body["execution_readiness"]["investment_clearance"] is False
