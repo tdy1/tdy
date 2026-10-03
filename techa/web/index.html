@@ -58,8 +58,9 @@ pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;
 </section>
 <section class="card">
 <h2>4. Evidence & Governance</h2>
-<p><span class="badge">MARKET_ASSUMPTION</span><span class="badge">EDITABLE</span><span class="badge">AUDITABLE</span></p>
-<p>The current workspace records financial inputs as editable assumptions. Evidence workflows can expand this without changing the financial engine.</p>
+<p><span class="badge">CLASSIFIED</span><span class="badge">EDITABLE</span><span class="badge">AUDITABLE</span></p>
+<button id="evidence" class="secondary">Review Evidence Status</button>
+<div id="evidence_out" class="status">Evidence status not loaded.</div>
 </section>
 <section class="card results">
 <h2>5. Simulation Result</h2><div id="metrics" class="metric"></div><pre id="out">No simulation run yet.</pre>
@@ -69,6 +70,12 @@ pre{white-space:pre-wrap;word-break:break-word;background:#10161c;color:#e8edf2;
 const $=id=>document.getElementById(id);
 const n=id=>Number($(id).value);
 const status=m=>{$('status').textContent=m};
+function renderEvidence(body){
+ const blockers=body.blocking_items||[];
+ $('evidence_out').innerHTML='<strong>'+body.items.length+' assumption(s)</strong> classified. '+
+ (blockers.length?'<b>'+blockers.length+' blocking item(s)</b> require primary/field verification.':'No blocking evidence classes.')+
+ '<div style="margin-top:8px">'+body.items.map(x=>'<div><b>'+x.key+'</b>: '+x.evidence_class+(x.source?' · source: '+x.source:'')+(x.executable?'':' · BLOCKING')+'</div>').join('')+'</div>';
+}
 function assumptions(){return [
 ['units_sold',n('units_sold'),'units'],['selling_price',n('selling_price'),'base_currency/unit'],
 ['direct_cogs',n('direct_cogs'),'base_currency'],['reserve_rate',n('reserve_rate'),'ratio'],
@@ -83,6 +90,10 @@ $('load').onclick=async()=>{try{const body=await call('/v1/business-cases/'+enco
 $('name').value=body.name;$('currency').value=body.base_currency.code;
 for(const [k,a] of Object.entries(body.assumptions||{}))if($(k))$(k).value=a.value;
 status('Business case loaded: '+body.case_id);$('out').textContent=JSON.stringify(body,null,2);}catch(e){status('Error: '+e.message);}};
+$('evidence').onclick=async()=>{try{
+ const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/evidence');
+ renderEvidence(body);
+}catch(e){$('evidence_out').textContent='Error: '+e.message;}};
 $('simulate').onclick=async()=>{try{const overrides={};
 if($('override_price').value!=='')overrides.selling_price=n('override_price');
 if($('override_units').value!=='')overrides.units_sold=n('override_units');
