@@ -10,3 +10,7 @@
 - Added SQLite schema and repository foundation.
 - Added FastAPI service and Docker deployment.
 - Added CI and regression baseline.
+- Added durable dated FX-rate API and exact-date presentation conversion.
+- Added direct and inverse stored-FX presentation paths.
+- Added currency-presentation audit metadata.
+- Added browser base/presentation currency controls.
