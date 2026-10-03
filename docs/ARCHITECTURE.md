@@ -8,15 +8,19 @@ Defines business cases, assumptions, evidence classes, currencies, and FX rates.
 
 Performs deterministic calculations in the declared base currency. Presentation conversion is a separate operation.
 
-The engine currently protects the mandatory direct-COGS reserve concept and prevents implicit FX conversion.
+The engine protects the mandatory direct-COGS reserve concept and prevents implicit FX conversion.
 
 ## Layer 3 — Audit
 
 Records engine event, case identifier, engine version, inputs, outputs, timestamp, and SHA-256 digest.
 
+Currency presentation is audited with the selected base/presentation currencies, exact as-of date, source, stored rate, and whether the rate was applied directly or inversely.
+
 ## Layer 4 — Application
 
-The web/API layer will consume the domain and engine layers. It must not duplicate financial formulas.
+The web/API layer consumes the domain and engine layers. It must not duplicate financial formulas.
+
+The financial endpoint calculates once in the base currency, then optionally presents the resulting financial fields in a separately selected currency.
 
 ## Layer 5 — Verification
 
@@ -32,8 +36,12 @@ Scenarios execute through the frozen financial engine. One-way sensitivity is a 
 
 ## Currency architecture
 
-A business case has one calculation base currency. Users may choose a presentation currency independently. Presentation conversion is explicit and occurs after calculation; it never changes the underlying financial result. Direct or inverse FX rates must be supplied with an as-of date and source. No implicit rate, averaging, or silent currency substitution is permitted.
+A business case has one calculation base currency. Users may choose a presentation currency independently. Presentation conversion is explicit and occurs after calculation; it never changes the underlying financial result.
 
-## Next implementation boundary
+FX rates are persisted as dated, sourced observations. A presentation request must provide an exact as-of date when the presentation currency differs from the base currency. The API accepts either a stored direct pair or a stored inverse pair for that exact date. If an inverse pair is used, the converter divides by the stored rate; it does not invent or silently fetch a latest rate.
 
-The next boundary is durable FX-rate management and API-level currency selection/presentation, followed by release verification. No previously completed analytical result is recomputed merely for migration.
+There is no implicit FX rate, averaging, silent currency substitution, or automatic latest-rate selection. The returned FX record identifies the stored pair/source, while the response also records whether the selected rate was direct or inverse.
+
+## Release boundary
+
+Currency selection, durable FX-rate persistence, direct/inverse presentation, audit capture, and browser controls are implemented. The remaining release gate is CI verification followed by release packaging; no previously completed analytical result is recomputed merely for migration.
