@@ -47,6 +47,20 @@ ALLOWED_LIFECYCLE_TRANSITIONS: dict[BusinessLifecycle, frozenset[BusinessLifecyc
 }
 
 
+class BusinessLifecycleService:
+    @staticmethod
+    def transition(item: BusinessUniverseItem, target: BusinessLifecycle) -> BusinessUniverseItem:
+        validate_lifecycle_transition(item.lifecycle_status, target)
+        return BusinessUniverseItem(
+            business_id=item.business_id,
+            name=item.name,
+            sector=item.sector,
+            geography=item.geography,
+            lifecycle_status=target,
+            active_case_id=item.active_case_id,
+        )
+
+
 def validate_lifecycle_transition(current: BusinessLifecycle, target: BusinessLifecycle) -> None:
     if current == target:
         return
