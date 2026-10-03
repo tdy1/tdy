@@ -400,3 +400,83 @@ def test_gbl_simulation_readiness_blocks_until_evidence_is_reclassified():
     assert readiness["can_execute"] is False
     assert readiness["investment_clearance"] is False
     assert "selling_price" in readiness["blocking_assumptions"]
+
+
+
+def test_gbl_548_production_acceptance_full_execution_round_trip():
+    client = TestClient(app)
+    data = _gbl_payload("548-P3-ACCEPTANCE")
+    data["assumptions"] = [
+        {"key": "units_sold", "value": "1000", "unit": "kg", "evidence_class": "MARKET_ASSUMPTION", "source": "GBL model assumption", "editable": True},
+        {"key": "selling_price", "value": "380", "unit": "ETB/kg", "evidence_class": "REQUIRES_PRIMARY_VERIFICATION", "source": "GBL #548 evidence register", "editable": True},
+        {"key": "direct_cogs", "value": "200000", "unit": "ETB", "evidence_class": "COST_ENGINEERING_ESTIMATE", "source": "GBL model estimate", "editable": True},
+        {"key": "reserve_rate", "value": "0.20", "unit": "ratio", "evidence_class": "MARKET_ASSUMPTION", "source": "GBL model assumption", "editable": True},
+        {"key": "operating_expenses", "value": "50000", "unit": "ETB", "evidence_class": "COST_ENGINEERING_ESTIMATE", "source": "GBL model estimate", "editable": True},
+        {"key": "tax_rate", "value": "0.30", "unit": "ratio", "evidence_class": "VERIFIED_FACT", "source": "Applicable tax assumption", "editable": True},
+    ]
+
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+    assert imported.json()["case_id"] == "548-P3-ACCEPTANCE"
+    assert imported.json()["governance"] == data["governance"]
+    assert imported.json()["source_results"][0]["status"] == "AUTHORITATIVE_REFERENCE"
+
+    summary = client.get("/v1/gbl/cases/548-P3-ACCEPTANCE/summary")
+    assert summary.status_code == 200
+    assert summary.json()["execution_readiness"]["status"] == "BLOCKED"
+    assert summary.json()["execution_readiness"]["investment_clearance"] is False
+
+    blocked = client.post(
+        "/v1/business-cases/548-P3-ACCEPTANCE/simulate",
+        json={"scenario_id": "S2", "scenario_name": "Rented facility", "overrides": {"selling_price": "400"}},
+    )
+    assert blocked.status_code == 409
+    assert blocked.json()["detail"]["status"] == "BLOCKED"
+    assert "selling_price" in blocked.json()["detail"]["blocking_items"]
+
+    changed = client.patch(
+        "/v1/business-cases/548-P3-ACCEPTANCE/assumptions/selling_price/evidence",
+        json={"evidence_class": "VERIFIED_FACT", "source": "Primary verification record"},
+    )
+    assert changed.status_code == 200
+    assert changed.json()["audit_digest"]
+
+    ready = client.get("/v1/gbl/cases/548-P3-ACCEPTANCE/summary")
+    assert ready.status_code == 200
+    assert ready.json()["execution_readiness"]["status"] == "READY"
+    assert ready.json()["execution_readiness"]["can_execute"] is True
+    assert ready.json()["execution_readiness"]["investment_clearance"] is False
+
+    scenario = client.post(
+        "/v1/business-cases/548-P3-ACCEPTANCE/simulate",
+        json={"scenario_id": "S2", "scenario_name": "Rented facility", "overrides": {"selling_price": "400"}},
+    )
+    assert scenario.status_code == 200
+    assert scenario.json()["scenario_id"] == "S2"
+    assert scenario.json()["financial"]["revenue"] == "400000.00"
+
+    reconciliation = client.get("/v1/gbl/cases/548-P3-ACCEPTANCE/results-reconciliation")
+    assert reconciliation.status_code == 200
+    recon = reconciliation.json()
+    assert recon["techa_calculation"]["available"] is True
+    assert recon["reconciliation"]["authoritative_results_preserved"] is True
+    assert recon["reconciliation"]["not_silently_overwritten"] is True
+    assert recon["gbl_source_results"][0]["result_id"] == "548-S2-FINAL"
+    assert recon["gbl_source_results"][0]["status"] == "AUTHORITATIVE_REFERENCE"
+
+    audit = client.get("/v1/business-cases/548-P3-ACCEPTANCE/audit")
+    assert audit.status_code == 200
+    events = [record["event"] for record in audit.json()["records"]]
+    assert "gbl.case_imported" in events
+    assert "evidence.reclassified" in events
+    assert "simulation.executed" in events
+
+    exported = client.get("/v1/gbl/cases/548-P3-ACCEPTANCE/export")
+    assert exported.status_code == 200
+    contract = exported.json()["contract"]
+    assert contract["business"] == data["business"]
+    assert contract["governance"] == data["governance"]
+    assert contract["scenarios"] == data["scenarios"]
+    assert contract["source_results"] == data["source_results"]
+    assert contract["source_results"][0]["result_id"] == "548-S2-FINAL"
+    assert exported.json()["audit_digest"]
