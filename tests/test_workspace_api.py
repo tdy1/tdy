@@ -383,3 +383,18 @@ def test_gbl_results_reconciliation_preserves_authoritative_source_results():
     assert body["reconciliation"]["not_silently_overwritten"] is True
     assert body["reconciliation"]["source_result_ids"] == ["548-S2-FINAL"]
     assert body["gbl_source_results"][0]["status"] == "AUTHORITATIVE_REFERENCE"
+
+
+def test_gbl_simulation_readiness_blocks_until_evidence_is_reclassified():
+    client = TestClient(app)
+    data = _gbl_payload("548-READINESS")
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+
+    summary = client.get("/v1/gbl/cases/548-READINESS/summary")
+    assert summary.status_code == 200
+    readiness = summary.json()["execution_readiness"]
+    assert readiness["status"] == "BLOCKED"
+    assert readiness["can_execute"] is False
+    assert readiness["investment_clearance"] is False
+    assert "selling_price" in readiness["blocking_assumptions"]
