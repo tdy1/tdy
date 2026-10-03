@@ -185,3 +185,23 @@ def test_workspace_sensitivity_is_executable_and_audited():
     body = result.json()
     assert [p["financial"]["net_profit"] for p in body["points"]] == ["-600.00", "280.00", "980.00"]
     assert body["audit_digest"]
+
+
+def test_workspace_same_currency_presentation_requires_no_fx():
+    case_id = "WORKSPACE-API-008"
+    created = client.post("/v1/business-cases", json=_case(case_id))
+    assert created.status_code == 200
+    simulated = client.post(
+        f"/v1/business-cases/{case_id}/simulate",
+        json={
+            "scenario_id": "BASE",
+            "scenario_name": "Base Case",
+            "overrides": {},
+            "presentation_currency": "ETB",
+        },
+    )
+    assert simulated.status_code == 200
+    body = simulated.json()
+    assert body["presentation"]["net_profit"] == "280.00"
+    assert "fx" not in body
+    assert "presentation_audit_digest" not in body
