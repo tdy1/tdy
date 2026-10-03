@@ -1,0 +1,20 @@
+{
+  "case": "canonical_engine_smoke",
+  "inputs": {
+    "units_sold": "100",
+    "selling_price": "50",
+    "direct_cogs": "3000",
+    "reserve_rate": "0.20",
+    "operating_expenses": "1000",
+    "tax_rate": "0.30"
+  },
+  "expected": {
+    "revenue": "5000.00",
+    "reserve": "600.00",
+    "total_cogs_and_reserve": "3600.00",
+    "operating_profit": "400.00",
+    "tax": "120.00",
+    "net_profit": "280.00"
+  },
+  "status": "ENGINE_REGRESSION_BASELINE"
+}
