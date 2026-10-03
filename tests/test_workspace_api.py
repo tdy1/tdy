@@ -3,6 +3,21 @@ from fastapi.testclient import TestClient
 from techa.api import app
 
 
+def _gbl_payload(case_id="548-API"):
+    return {
+        "contract_version": "1.0",
+        "business": {"business_id": case_id, "name": "Dehydrated Vegetable Production", "sector": "Agriculture & Agribusiness", "geography": "Ethiopia, Addis Ababa / Modjo Regional Corridor"},
+        "governance": {"state": "State 0", "human_gate": "HOLD / NOT CLEARED", "steps_frozen_through": 55},
+        "currency": {"base_currency": "ETB"},
+        "assumptions": [
+            {"key": "selling_price", "value": "380", "unit": "ETB/kg", "evidence_class": "REQUIRES_PRIMARY_VERIFICATION", "source": "GBL #548 evidence register", "editable": True},
+            {"key": "reserve_rate", "value": "0.20", "unit": "ratio", "evidence_class": "MARKET_ASSUMPTION", "source": "GBL model assumption", "editable": True},
+        ],
+        "scenarios": [{"scenario_id": "S2", "name": "Rented facility", "overrides": {"selling_price": "400"}}],
+        "source_results": [{"result_id": "548-S2-FINAL", "result_version": "1", "source_system": "GBL", "source_reference": "Business #548 completed model", "status": "AUTHORITATIVE_REFERENCE"}],
+    }
+
+
 client = TestClient(app)
 
 
@@ -209,10 +224,7 @@ def test_workspace_same_currency_presentation_requires_no_fx():
 
 
 def test_gbl_import_api_persists_case_and_audit():
-    from tests.test_gbl_integration import payload
-
-    data = payload()
-    data["business"]["business_id"] = "548-API"
+    data = _gbl_payload()
     imported = client.post("/v1/gbl/import", json=data)
     assert imported.status_code == 200
     body = imported.json()
@@ -232,9 +244,7 @@ def test_gbl_import_api_persists_case_and_audit():
 
 
 def test_gbl_import_api_rejects_invalid_contract():
-    from tests.test_gbl_integration import payload
-
-    data = payload()
+    data = _gbl_payload()
     data["assumptions"][0]["evidence_class"] = "VERIFIED"
     imported = client.post("/v1/gbl/import", json=data)
     assert imported.status_code == 422
