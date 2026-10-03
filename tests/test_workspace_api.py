@@ -170,3 +170,18 @@ def test_workspace_blocked_evidence_prevents_simulation():
     )
     assert simulated.status_code == 422
     assert "Simulation blocked by evidence requiring verification" in simulated.json()["detail"]
+
+
+def test_workspace_sensitivity_is_executable_and_audited():
+    case_id = "WORKSPACE-API-007"
+    created = client.post("/v1/business-cases", json=_case(case_id))
+    assert created.status_code == 200
+
+    result = client.post(
+        f"/v1/business-cases/{case_id}/sensitivity",
+        json={"variable": "selling_price", "values": ["40", "50", "60"]},
+    )
+    assert result.status_code == 200
+    body = result.json()
+    assert [p["financial"]["net_profit"] for p in body["points"]] == ["-600.00", "280.00", "980.00"]
+    assert body["audit_digest"]
