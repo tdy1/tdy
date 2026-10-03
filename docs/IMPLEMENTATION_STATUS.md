@@ -15,6 +15,8 @@ The canonical TECHA repository now contains the complete first production-orient
 - Debt amortization and interest schedule
 - Scenario execution
 - One-way sensitivity execution
+- First-class sensitivity service and API
+- Persisted audit-history retrieval
 - Evidence registry
 - Audit records with SHA-256 digest
 - SQLite persistence schema/repository foundation
@@ -28,10 +30,10 @@ The canonical TECHA repository now contains the complete first production-orient
 
 ### Verification
 
-GitHub Actions has executed the CI workflow successfully for the dependency-alignment build. Subsequent commits continue to trigger CI automatically; the latest run must be green before a release tag is considered final.
+GitHub Actions is the release verification gate. A recent sensitivity test cycle exposed incorrect test expectations for the financial engine's tax treatment; those expectations have been corrected. The newest CI cycle must be green before a release tag is considered final.
 
 ### Remaining release gate
 
-The remaining item is not another modeling calculation. It is release verification: allow the latest CI run to complete, inspect failures if any, correct them, and only then assign the next release version/tag.
+The remaining item is release verification: allow the corrected CI cycle to complete, inspect any failures, correct them, and only then assign the next release version/tag.
 
 Previously completed GBL and Business #548 calculations remain external reference requirements until their authoritative fixtures are intentionally imported. They are not recreated here merely to populate the repository.
