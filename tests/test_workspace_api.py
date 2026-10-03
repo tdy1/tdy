@@ -283,6 +283,43 @@ def test_gbl_548_complete_integration_preserves_scenario_governance_and_source_r
     assert "gbl.case_exported" in events
 
 
+def test_gbl_production_case_summary_exposes_governance_and_execution_readiness():
+    data = _gbl_payload("548-SUMMARY")
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+
+    summary = client.get("/v1/gbl/cases/548-SUMMARY/summary")
+    assert summary.status_code == 200
+    body = summary.json()
+    assert body["business"]["business_id"] == "548-SUMMARY"
+    assert body["governance"] == data["governance"]
+    assert body["currency"]["base_currency"] == "ETB"
+    assert body["counts"]["assumptions"] == 2
+    assert body["counts"]["scenarios"] == 1
+    assert body["counts"]["source_results"] == 1
+    assert body["execution_readiness"]["can_execute"] is False
+    assert "selling_price" in body["execution_readiness"]["blocking_assumptions"]
+
+
+def test_gbl_production_case_summary_becomes_executable_after_explicit_reclassification():
+    data = _gbl_payload("548-SUMMARY-READY")
+    imported = client.post("/v1/gbl/import", json=data)
+    assert imported.status_code == 200
+
+    changed = client.patch(
+        "/v1/business-cases/548-SUMMARY-READY/assumptions/selling_price/evidence",
+        json={"evidence_class": "VERIFIED_FACT", "source": "Primary verification record"},
+    )
+    assert changed.status_code == 200
+
+    summary = client.get("/v1/gbl/cases/548-SUMMARY-READY/summary")
+    assert summary.status_code == 200
+    body = summary.json()
+    assert body["execution_readiness"]["can_execute"] is True
+    assert body["execution_readiness"]["blocking_assumptions"] == []
+
+
+
 def test_gbl_source_result_reconciliation_rejects_duplicate_ids():
     data = _gbl_payload("548-RECON")
     data["source_results"].append(dict(data["source_results"][0]))
