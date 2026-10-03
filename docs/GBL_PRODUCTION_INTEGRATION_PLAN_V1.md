@@ -39,7 +39,7 @@ Neither intake path promotes evidence, silently changes governance, recalculates
 Governance is visible before simulation: State, Human Gate, frozen-through step, blockers, evidence counts, executable status, source-result status, and case-level identity/currency summary. The workspace distinguishes execution readiness from investment clearance.
 
 ### D. Active Case Navigation
-The workspace can enumerate universe records with active executable cases and open each case directly into its governance-first summary. Navigation does not alter case state or source results.
+The workspace can enumerate universe records with active executable cases and open each case directly into its governance-first summary. The case summary resolves the linked canonical Business Universe identity and lifecycle when an active link exists. Navigation and identity resolution do not alter case state or source results.
 
 ### E. Scenario Workspace
 GBL scenarios become first-class executable configurations. Initial model: S1, S2, S3, explicit overrides, scenario-level execution audit. The generic engine remains unaware of #548-specific meanings.
