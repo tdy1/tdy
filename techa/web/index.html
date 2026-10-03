@@ -52,7 +52,7 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 <button id="evidence" class="secondary">Review Evidence Status</button><button id="sensitivity" class="secondary">Run Price Sensitivity</button>
 <div id="gbl_out" class="status">GBL contract not loaded.</div><div id="evidence_out" class="status">Evidence status not loaded.</div><div id="evidence_editor"></div><div id="audit_out" class="status">Audit trail not loaded.</div>
 </section>
-<section class="card" id="scenarios"><h2>3. Scenarios</h2><p class="sub">Select and inspect imported GBL scenarios without changing the source contract.</p><div id="scenario_out" class="status">Scenarios not loaded.</div><select id="scenario_select" style="margin-top:10px;min-width:260px"><option value="">Select scenario</option></select></section><section class="card results" id="results">
+<section class="card" id="scenarios"><h2>3. Scenarios</h2><p class="sub">Select and inspect imported GBL scenarios without changing the source contract.</p><div id="scenario_out" class="status">Scenarios not loaded.</div><div id="scenario_detail" class="status">Select a scenario to inspect its explicit overrides.</div><select id="scenario_select" style="margin-top:10px;min-width:260px"><option value="">Select scenario</option></select></section><section class="card results" id="results">
 <h2>5. Results</h2><div id="metrics" class="metric"></div><div id="presentation_out" class="status">Presentation result not available.</div><pre id="out">No simulation run yet.</pre>
 </section><section class="card" id="audit_section"><h2>6. Audit / Integrity</h2><p class="sub">Audit records and source-result reconciliation remain separate from model conclusions.</p><div id="source_result_out" class="status">Source-result reconciliation not loaded.</div></section>
 </div></div>
@@ -60,7 +60,8 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 const $=id=>document.getElementById(id);
 const n=id=>Number($(id).value);
 const status=m=>{$('status').textContent=m};
-async function loadGblWorkspace(){try{const id=encodeURIComponent($('case_id').value.trim());const s=await call('/v1/gbl/cases/'+id+'/summary');$('home_status').innerHTML='<strong>'+s.business.name+'</strong> · '+s.business.business_id+'<br>Governance: '+s.governance.state+' · '+s.governance.human_gate+' · '+(s.execution_readiness.can_execute?'EXECUTION READY':'BLOCKED');const sc=await call('/v1/gbl/cases/'+id+'/scenarios');$('scenario_out').textContent=sc.scenarios.length+' scenario(s) imported.';$('scenario_select').innerHTML='<option value="">Select scenario</option>'+sc.scenarios.map(x=>'<option value="'+x.scenario_id+'">'+x.name+' ('+x.scenario_id+')</option>').join('');const sr=await call('/v1/gbl/cases/'+id+'/source-results');$('source_result_out').innerHTML='<strong>'+sr.reconciliation.count+' source result(s)</strong> · authoritative results preserved · IDs: '+sr.reconciliation.result_ids.join(', ');}catch(e){$('home_status').textContent='GBL workspace error: '+e.message;}}
+let gblScenarios=[];
+async function loadGblWorkspace(){try{const id=encodeURIComponent($('case_id').value.trim());const s=await call('/v1/gbl/cases/'+id+'/summary');$('home_status').innerHTML='<strong>'+s.business.name+'</strong> · '+s.business.business_id+'<br>Governance: '+s.governance.state+' · '+s.governance.human_gate+' · '+(s.execution_readiness.can_execute?'EXECUTION READY':'BLOCKED');const sc=await call('/v1/gbl/cases/'+id+'/scenarios');$('scenario_out').textContent=sc.scenarios.length+' scenario(s) imported.';gblScenarios=sc.scenarios||[];$('scenario_select').innerHTML='<option value="">Select scenario</option>'+gblScenarios.map(x=>'<option value="'+x.scenario_id+'">'+x.name+' ('+x.scenario_id+')</option>').join('');const sr=await call('/v1/gbl/cases/'+id+'/source-results');$('source_result_out').innerHTML='<strong>'+sr.reconciliation.count+' source result(s)</strong> · authoritative results preserved · IDs: '+sr.reconciliation.result_ids.join(', ');}catch(e){$('home_status').textContent='GBL workspace error: '+e.message;}}
 function renderEvidence(body){
  const blockers=body.blocking_items||[];
  $('evidence_out').innerHTML='<strong>'+body.items.length+' assumption(s)</strong> classified. '+
@@ -118,7 +119,7 @@ return '<div>'+label+'<strong>'+f[key]+'</strong></div>';}).join('');
 $('out').textContent=JSON.stringify(body,null,2);status('Simulation completed and audit record persisted.');
 }catch(e){status('Error: '+e.message);}};
 
-$('scenario_select').onchange=()=>{const id=$('scenario_select').value;if(id)status('Scenario selected: '+id+'. Overrides remain explicit and editable.');};
+$('scenario_select').onchange=()=>{const id=$('scenario_select').value;const s=gblScenarios.find(x=>x.scenario_id===id);if(!s){$('scenario_detail').textContent='Select a scenario to inspect its explicit overrides.';return;}const overrides=s.overrides||{};$('scenario_detail').innerHTML='<strong>'+s.name+'</strong> · '+s.scenario_id+'<br><span class="badge">EXPLICIT OVERRIDES</span> '+(Object.keys(overrides).length?'<pre style="margin-top:8px">'+JSON.stringify(overrides,null,2)+'</pre>':'No overrides; uses the imported base assumptions.');status('Scenario selected: '+id+'. Overrides remain explicit and editable.');};
 $('import_gbl').onclick=async()=>{try{
  const id=$('case_id').value.trim();
  const body=await call('/v1/gbl/cases/'+encodeURIComponent(id));
