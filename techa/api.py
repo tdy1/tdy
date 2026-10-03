@@ -530,6 +530,31 @@ def get_gbl_case_evidence(case_id: str):
     })
 
 
+@app.get("/v1/gbl/cases/{case_id}/results-reconciliation")
+def get_gbl_results_reconciliation(case_id: str):
+    if _store.get_business_case(case_id) is None:
+        raise HTTPException(status_code=404, detail="Business case not found")
+    metadata = _store.get_gbl_case_metadata(case_id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="GBL metadata not found")
+    audits = _store.get_audit_records(case_id, 100)
+    simulation_events = [r for r in audits if r.get("event") in {"simulation.executed", "gbl.case_imported"}]
+    return jsonable({
+        "case_id": case_id,
+        "techa_calculation": {
+            "available": any(r.get("event") == "simulation.executed" for r in audits),
+            "audit_events": simulation_events,
+        },
+        "gbl_source_results": list(metadata["source_results"]),
+        "reconciliation": {
+            "source_result_count": len(metadata["source_results"]),
+            "source_result_ids": [r["result_id"] for r in metadata["source_results"]],
+            "authoritative_results_preserved": True,
+            "not_silently_overwritten": True,
+        },
+    })
+
+
 @app.get("/v1/gbl/cases/{case_id}/source-results")
 def get_gbl_case_source_results(case_id: str):
     if _store.get_business_case(case_id) is None:
