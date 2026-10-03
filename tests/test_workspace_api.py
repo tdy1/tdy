@@ -369,8 +369,9 @@ def test_workspace_browser_surface_exposes_gbl_controls():
         assert marker in html
 
 
-def test_gbl_results_reconciliation_preserves_authoritative_source_results(client):
+def test_gbl_results_reconciliation_preserves_authoritative_source_results():
     payload = _gbl_payload()
+    client = TestClient(app)
     imported = client.post("/v1/gbl/import", json=payload)
     assert imported.status_code == 200
     case_id = imported.json()["case_id"]
