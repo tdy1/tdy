@@ -13,8 +13,8 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 </head>
 <body><div class="shell">
 <header><div><h1>TECHA</h1><p>SIMULATE BEFORE YOU CAPITALIZE.</p><p>Business Simulation Workspace</p></div><span class="version">Engine 0.1.0 · GBL-ready</span></header>
-<div class="layout"><nav class="nav"><strong>Workspace</strong><a href="#business">1 · Business Case</a><a href="#financial">2 · Financial Inputs</a><a href="#simulation">3 · Run Simulation</a><a href="#governance">4 · Evidence & Governance</a><a href="#results">5 · Results</a><div class="hint">Recommended flow:<br>Save → Review evidence → Load GBL → Run → Audit / Export</div></nav><main class="content">
-<section class="card">
+<div class="layout"><nav class="nav"><strong>GBL Workspace</strong><a href="#home">Home</a><a href="#business">1 · Business Case</a><a href="#governance">2 · Governance & Evidence</a><a href="#scenarios">3 · Scenarios</a><a href="#simulation">4 · Simulation</a><a href="#results">5 · Results</a><a href="#audit_section">6 · Audit / Integrity</a><div class="hint">Production flow:<br>Load case → Review governance → Review evidence → Select scenario → Simulate → Reconcile → Audit / Export</div></nav><main class="content">
+<section class="card" id="home"><h2>GBL Home</h2><p class="sub">Global Business Lab execution workspace. TECHA executes the model; governance, evidence classes, assumptions, scenarios, and source results remain explicit.</p><div id="home_status" class="status">No GBL case loaded.</div></section><section class="card" id="business">
 <h2>1. Business Case</h2>
 <div class="fields">
 <label>Case ID<input id="case_id" value="CASE-001"></label>
@@ -36,8 +36,8 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 </div>
 <button id="create">Create / Save Business Case</button>
 </section>
-<section class="card">
-<h2>3. Run Simulation</h2><p>Run stored assumptions through the deterministic financial engine. Scenario overrides are optional.</p>
+<section class="card" id="simulation">
+<h2>4. Simulation</h2><p>Run stored assumptions through the deterministic financial engine. Scenario overrides are optional.</p>
 <div class="fields">
 <label>FX rate source<input id="fx_source" placeholder="required only when saving an FX rate"></label><label>FX rate<input id="fx_rate" type="number" step="any" placeholder="base → presentation"></label><label>Override selling price<input id="override_price" type="number" step="any" placeholder="optional"></label>
 <label>Override units sold<input id="override_units" type="number" step="any" placeholder="optional"></label>
@@ -46,20 +46,21 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 <button id="load" class="secondary">Reload Case</button><button id="import_gbl" class="secondary">Load GBL Contract</button><button id="export_gbl" class="secondary">Export GBL Contract</button><button id="audit" class="secondary">View Audit Trail</button>
 <div id="status" class="status">Ready.</div>
 </section>
-<section class="card">
-<h2>4. Evidence & Governance</h2>
+<section class="card" id="governance">
+<h2>2. Governance & Evidence</h2>
 <p><span class="badge">CLASSIFIED</span><span class="badge">EDITABLE</span><span class="badge">AUDITABLE</span></p>
 <button id="evidence" class="secondary">Review Evidence Status</button><button id="sensitivity" class="secondary">Run Price Sensitivity</button>
 <div id="gbl_out" class="status">GBL contract not loaded.</div><div id="evidence_out" class="status">Evidence status not loaded.</div><div id="evidence_editor"></div><div id="audit_out" class="status">Audit trail not loaded.</div>
 </section>
-<section class="card results">
-<h2>5. Simulation Result</h2><div id="metrics" class="metric"></div><div id="presentation_out" class="status">Presentation result not available.</div><pre id="out">No simulation run yet.</pre>
-</section>
+<section class="card" id="scenarios"><h2>3. Scenarios</h2><p class="sub">Select and inspect imported GBL scenarios without changing the source contract.</p><div id="scenario_out" class="status">Scenarios not loaded.</div><select id="scenario_select" style="margin-top:10px;min-width:260px"><option value="">Select scenario</option></select></section><section class="card results" id="results">
+<h2>5. Results</h2><div id="metrics" class="metric"></div><div id="presentation_out" class="status">Presentation result not available.</div><pre id="out">No simulation run yet.</pre>
+</section><section class="card" id="audit_section"><h2>6. Audit / Integrity</h2><p class="sub">Audit records and source-result reconciliation remain separate from model conclusions.</p><div id="source_result_out" class="status">Source-result reconciliation not loaded.</div></section>
 </div></div>
 <script>
 const $=id=>document.getElementById(id);
 const n=id=>Number($(id).value);
 const status=m=>{$('status').textContent=m};
+async function loadGblWorkspace(){try{const id=encodeURIComponent($('case_id').value.trim());const s=await call('/v1/gbl/cases/'+id+'/summary');$('home_status').innerHTML='<strong>'+s.business.name+'</strong> · '+s.business.business_id+'<br>Governance: '+s.governance.state+' · '+s.governance.human_gate+' · '+(s.execution_readiness.can_execute?'EXECUTION READY':'BLOCKED');const sc=await call('/v1/gbl/cases/'+id+'/scenarios');$('scenario_out').textContent=sc.scenarios.length+' scenario(s) imported.';$('scenario_select').innerHTML='<option value="">Select scenario</option>'+sc.scenarios.map(x=>'<option value="'+x.scenario_id+'">'+x.name+' ('+x.scenario_id+')</option>').join('');const sr=await call('/v1/gbl/cases/'+id+'/source-results');$('source_result_out').innerHTML='<strong>'+sr.reconciliation.count+' source result(s)</strong> · authoritative results preserved · IDs: '+sr.reconciliation.result_ids.join(', ');}catch(e){$('home_status').textContent='GBL workspace error: '+e.message;}}
 function renderEvidence(body){
  const blockers=body.blocking_items||[];
  $('evidence_out').innerHTML='<strong>'+body.items.length+' assumption(s)</strong> classified. '+
@@ -117,6 +118,7 @@ return '<div>'+label+'<strong>'+f[key]+'</strong></div>';}).join('');
 $('out').textContent=JSON.stringify(body,null,2);status('Simulation completed and audit record persisted.');
 }catch(e){status('Error: '+e.message);}};
 
+$('scenario_select').onchange=()=>{const id=$('scenario_select').value;if(id)status('Scenario selected: '+id+'. Overrides remain explicit and editable.');};
 $('import_gbl').onclick=async()=>{try{
  const id=$('case_id').value.trim();
  const body=await call('/v1/gbl/cases/'+encodeURIComponent(id));
