@@ -104,6 +104,59 @@ class SQLiteStore:
             "scenarios": json.loads(row[6]), "source_results": json.loads(row[7]),
         }
 
+    def save_universe_item(self, item) -> None:
+        from techa.core.universe import BusinessUniverseItem
+        if not isinstance(item, BusinessUniverseItem):
+            raise TypeError("item must be a BusinessUniverseItem")
+        now = datetime.now(timezone.utc).isoformat()
+        with self._lock:
+            self.db.execute(
+                """INSERT INTO business_universe
+                   (business_id,name,sector,geography,lifecycle_status,active_case_id,created_at,updated_at)
+                   VALUES(?,?,?,?,?,?,?,?)
+                   ON CONFLICT(business_id) DO UPDATE SET name=excluded.name,
+                   sector=excluded.sector,geography=excluded.geography,
+                   lifecycle_status=excluded.lifecycle_status,active_case_id=excluded.active_case_id,
+                   updated_at=excluded.updated_at""",
+                (item.business_id, item.name, item.sector, item.geography,
+                 item.lifecycle_status.value, item.active_case_id, now, now),
+            )
+            self.db.commit()
+
+    def get_universe_item(self, business_id: str):
+        from techa.core.universe import BusinessLifecycle, BusinessUniverseItem
+        with self._lock:
+            row = self.db.execute(
+                "SELECT business_id,name,sector,geography,lifecycle_status,active_case_id "
+                "FROM business_universe WHERE business_id=?", (business_id,)
+            ).fetchone()
+        if row is None:
+            return None
+        return BusinessUniverseItem(
+            business_id=row[0], name=row[1], sector=row[2], geography=row[3],
+            lifecycle_status=BusinessLifecycle(row[4]), active_case_id=row[5],
+        )
+
+    def list_universe_items(self, lifecycle_status: str | None = None) -> list:
+        from techa.core.universe import BusinessLifecycle, BusinessUniverseItem
+        with self._lock:
+            if lifecycle_status is None:
+                rows = self.db.execute(
+                    "SELECT business_id,name,sector,geography,lifecycle_status,active_case_id "
+                    "FROM business_universe ORDER BY business_id"
+                ).fetchall()
+            else:
+                BusinessLifecycle(lifecycle_status)
+                rows = self.db.execute(
+                    "SELECT business_id,name,sector,geography,lifecycle_status,active_case_id "
+                    "FROM business_universe WHERE lifecycle_status=? ORDER BY business_id",
+                    (lifecycle_status,),
+                ).fetchall()
+        return [BusinessUniverseItem(
+            business_id=r[0], name=r[1], sector=r[2], geography=r[3],
+            lifecycle_status=BusinessLifecycle(r[4]), active_case_id=r[5],
+        ) for r in rows]
+
     def save_fx_rate(self, fx: FxRate) -> None:
         with self._lock:
             self.db.execute(
