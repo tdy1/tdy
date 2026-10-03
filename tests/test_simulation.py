@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from techa.core.models import Assumption, BusinessCase, Currency, EvidenceClass
+from techa.core.evidence import EvidenceItem, EvidenceRegistry
 from techa.core.scenario import Scenario
 from techa.core.simulation import SimulationService
 from techa.storage.repository import SQLiteStore
@@ -33,6 +34,20 @@ def test_simulation_executes_and_persists_audit(tmp_path):
     assert result.financial.net_profit == Decimal("280.00")
     row = store.db.execute("SELECT event,case_id FROM audit_record").fetchone()
     assert row == ("simulation.execute", "SIM-001")
+    store.close()
+
+
+def test_simulation_blocks_on_unverified_evidence(tmp_path):
+    store = SQLiteStore(tmp_path / "techa.db")
+    store.initialize("techa/storage/schema.sql")
+    case = make_case()
+    registry = EvidenceRegistry()
+    registry.add(EvidenceItem("E1", "Primary verification required", EvidenceClass.REQUIRES_PRIMARY_VERIFICATION, requires_primary_verification=True))
+    try:
+        SimulationService(store).execute(case, evidence=registry)
+        assert False, "simulation should be blocked"
+    except ValueError as exc:
+        assert "E1" in str(exc)
     store.close()
 
 
