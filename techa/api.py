@@ -112,7 +112,7 @@ def calculate(req: FinancialRequest):
         ))
         base_currency = req.base_currency.upper()
         presentation_currency = (req.presentation_currency or base_currency).upper()
-        response = {"financial": result}
+        response = {"financial": result, **{k: str(v) for k, v in result.__dict__.items()}}
         if presentation_currency != base_currency:
             if not req.fx_as_of:
                 raise ValueError("fx_as_of is required when presentation currency differs from base currency")
