@@ -79,7 +79,7 @@ class SQLiteStore:
                 """INSERT INTO gbl_case_metadata
                    (case_id,business_metadata_json,contract_version,governance_json,presentation_currency,fx_as_of,fx_source,scenarios_json,source_results_json)
                    VALUES(?,?,?,?,?,?,?,?,?)
-                   ON CONFLICT(case_id) DO UPDATE SET contract_version=excluded.contract_version,
+                   ON CONFLICT(case_id) DO UPDATE SET business_metadata_json=excluded.business_metadata_json, contract_version=excluded.contract_version,
                    governance_json=excluded.governance_json,presentation_currency=excluded.presentation_currency,
                    fx_as_of=excluded.fx_as_of,fx_source=excluded.fx_source,scenarios_json=excluded.scenarios_json,
                    source_results_json=excluded.source_results_json""",
