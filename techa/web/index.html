@@ -106,14 +106,19 @@ $('save_fx').onclick=async()=>{try{
  const body=await call('/v1/fx-rates',{method:'POST',body:JSON.stringify({from_currency:from,to_currency:to,rate:n('fx_rate'),as_of:$('fx_as_of').value,source:$('fx_source').value.trim()})});
  status('FX rate saved: '+body.from_currency.code+' → '+body.to_currency.code+' @ '+body.as_of);
 }catch(e){status('FX error: '+e.message);}};
-$('simulate').onclick=async()=>{try{const overrides={};
+$('simulate').onclick=async()=>{try{
+const selectedId=$('scenario_select').value;
+const selected=gblScenarios.find(x=>x.scenario_id===selectedId);
+const overrides=Object.assign({},selected&&selected.overrides||{});
 if($('override_price').value!=='')overrides.selling_price=n('override_price');
 if($('override_units').value!=='')overrides.units_sold=n('override_units');
+const scenarioId=selectedId||((Object.keys(overrides).length)?'SCENARIO':'BASE');
+const scenarioName=selected?selected.name:$('scenario_name').value;
 const body=await call('/v1/business-cases/'+encodeURIComponent($('case_id').value.trim())+'/simulate',{method:'POST',
-body:JSON.stringify({scenario_id:Object.keys(overrides).length?'SCENARIO':'BASE',scenario_name:$('scenario_name').value,overrides,presentation_currency:$('presentation_currency').value,fx_as_of:$('fx_as_of').value||null})});
+body:JSON.stringify({scenario_id:scenarioId,scenario_name:scenarioName,overrides,presentation_currency:$('presentation_currency').value,fx_as_of:$('fx_as_of').value||null})});
 const f=body.financial;
 const p=body.presentation||f; $('presentation_out').innerHTML=body.presentation&&body.fx?'<strong>Presentation:</strong> '+body.fx.to_currency.code+' · FX '+body.fx.rate+' · '+body.fx.as_of+' · '+body.fx.source+' · '+body.fx_direction:'Presentation currency = calculation currency; no FX conversion applied.';
-$('metrics').innerHTML=['Revenue','Total COGS + Reserve','Operating Profit','Tax','Net Profit'].map((label,i)=>{
+$('metrics').innerHTML='<div class="status"><strong>TECHA calculated result</strong> · scenario: '+(body.scenario_id||'BASE')+' · source GBL results are preserved separately.</div>'+['Revenue','Total COGS + Reserve','Operating Profit','Tax','Net Profit'].map((label,i)=>{
 const key=['revenue','total_cogs_and_reserve','operating_profit','tax','net_profit'][i];
 return '<div>'+label+'<strong>'+f[key]+'</strong></div>';}).join('');
 $('out').textContent=JSON.stringify(body,null,2);status('Simulation completed and audit record persisted.');
