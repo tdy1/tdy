@@ -18,7 +18,7 @@ header h1{margin:0;font-size:30px;letter-spacing:.3px}header p{margin:3px 0;opac
 <div class="fields" style="margin-top:12px"><label>Lifecycle status<select id="universe_lifecycle">
 <option>UNIVERSE</option><option>CANDIDATE</option><option>INGESTED</option><option>GOVERNANCE_HOLD</option><option>SIMULATION_READY</option><option>SIMULATED</option><option>REVIEW</option><option>CLEARED</option><option>NOT_CLEARED</option>
 </select></label></div><button id="universe_transition" class="secondary">Apply Lifecycle Transition</button>
-<button id="universe_intake" class="secondary">Start Business Intake</button>
+<div class="fields" style="margin-top:12px"><label>New Case ID<input id="universe_case_id" value="548-case-v1"></label><label>Base calculation currency<select id="universe_base_currency"><option>ETB</option><option>USD</option><option>EUR</option><option>KES</option><option>TZS</option><option>UGX</option></select></label></div><button id="universe_intake" class="secondary">Start Business Intake</button>
 <div id="universe_intake_out" class="status">Business intake not executed.</div><div id="universe_lifecycle_out" class="status">Lifecycle transition not executed.</div></section><section class="card" id="home"><h2>GBL Home</h2><p class="sub">Global Business Lab execution workspace. TECHA executes the model; governance, evidence classes, assumptions, scenarios, and source results remain explicit.</p><div id="home_status" class="status">No GBL case loaded.</div></section><section class="card" id="business">
 <h2>1. Business Case</h2>
 <div class="fields">
@@ -76,10 +76,10 @@ $('universe_save').onclick=saveUniverse;$('universe_load').onclick=loadUniverse;
 async function intakeBusiness(){
   try{
     const id=encodeURIComponent($('universe_business_id').value.trim());
-    const caseId=prompt('New Business Case ID');
-    if(!caseId) return;
-    const currency=prompt('Base calculation currency','ETB') || 'ETB';
-    const x=await call('/v1/gbl/universe/'+id+'/intake',{method:'POST',body:JSON.stringify({case_id:caseId,base_currency:currency.trim().toUpperCase()})});
+    const caseId=$('universe_case_id').value.trim();
+    if(!caseId) throw new Error('Case ID is required');
+    const currency=$('universe_base_currency').value;
+    const x=await call('/v1/gbl/universe/'+id+'/intake',{method:'POST',body:JSON.stringify({case_id:caseId,base_currency:currency})});
     $('universe_intake_out').innerHTML='<strong>Intake:</strong> '+x.case.case_id+' · lifecycle '+x.business.lifecycle_status;
     $('universe_out').innerHTML='<strong>Business:</strong> '+x.business.business_id+' · '+x.business.name+' · '+x.business.lifecycle_status+' · case '+x.business.active_case_id;
     status('Business intake recorded and audited.');
