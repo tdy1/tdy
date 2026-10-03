@@ -121,7 +121,7 @@ def validate_gbl_case(payload: Mapping[str, Any]) -> None:
         for key in ("result_id", "result_version", "source_system", "source_reference", "status"):
             _required(result, key, "source_result")
         if result["result_id"] in result_ids:
-            raise GBLCaseValidationError(f"Duplicate source result ID: {result["result_id"]}")
+            raise GBLCaseValidationError(f'Duplicate source result ID: {result["result_id"]}')
         result_ids.add(result["result_id"])
 
 
