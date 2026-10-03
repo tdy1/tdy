@@ -105,6 +105,7 @@ $('load_summary').onclick=async()=>{try{
  const g=body.governance||{}, e=body.execution_readiness||{}, c=body.counts||{}, cur=body.currency||{};
  $('case_summary_out').innerHTML='<strong>'+body.business.business_id+' · '+body.business.name+'</strong> · lifecycle '+(body.business.lifecycle_status||'INGESTED')+
  '<br>Universe: '+(body.universe?(body.universe.business_id+' · lifecycle '+body.universe.lifecycle_status+' · active case '+body.universe.active_case_id):'not linked')+
+ '<br>GBL Contract: '+(body.gbl_contract_loaded?'LOADED':'NOT LOADED')+
  '<br>Governance: '+(g.state||'—')+' · Human Gate: '+(g.human_gate||'—')+' · frozen through: '+(g.steps_frozen_through??'—')+
  '<br>Execution readiness: <b>'+e.status+'</b> · investment clearance: '+(e.investment_clearance?'CLEARED':'NOT CLEARED')+
  '<br>Assumptions: '+c.assumptions+' · blockers: '+c.blocking_evidence+' · scenarios: '+c.scenarios+' · source results: '+c.source_results+
