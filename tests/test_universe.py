@@ -1,3 +1,5 @@
+import pytest
+
 from techa.core.universe import BusinessLifecycle, BusinessUniverseItem, validate_lifecycle_transition
 from techa.storage.repository import SQLiteStore
 
