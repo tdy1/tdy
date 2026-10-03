@@ -30,3 +30,12 @@ CREATE TABLE IF NOT EXISTS gbl_case_metadata (
  source_results_json TEXT NOT NULL,
  FOREIGN KEY(case_id) REFERENCES business_case(case_id)
 );
+
+
+CREATE TABLE IF NOT EXISTS business_universe (
+ business_id TEXT PRIMARY KEY, name TEXT NOT NULL, sector TEXT NOT NULL,
+ geography TEXT NOT NULL, lifecycle_status TEXT NOT NULL,
+ active_case_id TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_business_universe_sector ON business_universe(sector);
+CREATE INDEX IF NOT EXISTS idx_business_universe_lifecycle ON business_universe(lifecycle_status);
