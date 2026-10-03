@@ -39,3 +39,5 @@ CREATE TABLE IF NOT EXISTS business_universe (
 );
 CREATE INDEX IF NOT EXISTS idx_business_universe_sector ON business_universe(sector);
 CREATE INDEX IF NOT EXISTS idx_business_universe_lifecycle ON business_universe(lifecycle_status);
+
+CREATE INDEX IF NOT EXISTS idx_business_universe_active_case ON business_universe(active_case_id);
