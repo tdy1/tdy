@@ -157,6 +157,21 @@ class SQLiteStore:
             lifecycle_status=BusinessLifecycle(r[4]), active_case_id=r[5],
         ) for r in rows]
 
+    def get_universe_item_by_case_id(self, case_id: str):
+        from techa.core.universe import BusinessLifecycle, BusinessUniverseItem
+        with self._lock:
+            row = self.db.execute(
+                "SELECT business_id,name,sector,geography,lifecycle_status,active_case_id "
+                "FROM business_universe WHERE active_case_id=?",
+                (case_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return BusinessUniverseItem(
+            business_id=row[0], name=row[1], sector=row[2], geography=row[3],
+            lifecycle_status=BusinessLifecycle(row[4]), active_case_id=row[5],
+        )
+
     def save_fx_rate(self, fx: FxRate) -> None:
         with self._lock:
             self.db.execute(
